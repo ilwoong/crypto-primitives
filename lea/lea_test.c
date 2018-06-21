@@ -28,7 +28,7 @@
 #include "lea.h"
 #include <stdio.h>
 #include <string.h>
-
+    
 static void print_array(const uint8_t* array, size_t count)
 {
     size_t i = 0;
