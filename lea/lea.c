@@ -1,7 +1,7 @@
 /**
- * The MIT License
+ * MIT License
  * 
- * Copyright (c) <2018> <Ilwoong Jeong, ilwoong.jeong@gmail.com>
+ * Copyright (c) 2018 Ilwoong Jeong, https://github.com/ilwoong
  * 
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -50,17 +50,16 @@ static inline uint32_t ror32(uint32_t value, size_t rot)
 
 static inline void lea_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks, size_t rounds)
 {
-    uint32_t* block = (uint32_t*) in;
+    const uint32_t* rk = (const uint32_t*) rks;
+    const uint32_t* block = (const uint32_t*) in;
     uint32_t* outblk = (uint32_t*) out;
-    uint32_t* rk = (uint32_t*) rks;
-    size_t round = 0;
 
     uint32_t b0 = block[0];
     uint32_t b1 = block[1];
     uint32_t b2 = block[2];
     uint32_t b3 = block[3];
 
-    for (round = 0; round < rounds; round += 4)
+    for (size_t round = 0; round < rounds; round += 4)
     {
         b3 = ror32((b2 ^ rk[4]) + (b3 ^ rk[5]), 3);
         b2 = ror32((b1 ^ rk[2]) + (b2 ^ rk[3]), 5);
@@ -91,10 +90,9 @@ static inline void lea_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* r
 
 static inline void lea_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks, size_t rounds)
 {
-    uint32_t* block = (uint32_t*) in;
+    const uint32_t* rk = (const uint32_t*) rks;
+    const uint32_t* block = (const uint32_t*) in;
     uint32_t* outblk = (uint32_t*) out;
-    uint32_t* rk = (uint32_t*) rks;
-    size_t round = 0;
 
     uint32_t b0 = block[0];
     uint32_t b1 = block[1];
@@ -102,7 +100,7 @@ static inline void lea_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* r
     uint32_t b3 = block[3];
 
     rk += 6 * (rounds - 1);
-    for (round = 0; round < rounds; round += 4)
+    for (size_t round = 0; round < rounds; round += 4)
     {
         b0 = (ror32(b0, 9) - (b3 ^ rk[0])) ^ rk[1];
         b1 = (rol32(b1, 5) - (b0 ^ rk[2])) ^ rk[3];
@@ -136,16 +134,15 @@ static inline void lea_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* r
  */
 void lea128_keygen(uint8_t* out, const uint8_t* mk)
 {
+    const uint32_t* t = (const uint32_t*) mk;
     uint32_t* rk = (uint32_t*) out;
-    uint32_t* t = (uint32_t*) mk;    
-    size_t round = 0;
     
     uint32_t t0 = t[0];
     uint32_t t1 = t[1];
     uint32_t t2 = t[2];
     uint32_t t3 = t[3];
 
-    for(round = 0; round < LEA128_ROUNDS; ++round) {
+    for(size_t round = 0; round < LEA128_ROUNDS; ++round) {
         uint32_t delta = DELTA[round & 3];
         
         t0 = rol32(t0 + rol32(delta, round), 1);
@@ -178,9 +175,8 @@ void lea128_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
  */
 void lea192_keygen(uint8_t* out, const uint8_t* mk)
 {
+    const uint32_t* t = (const uint32_t*) mk;
     uint32_t* rk = (uint32_t*) out;
-    uint32_t* t = (uint32_t*) mk;    
-    size_t round = 0;
     
     uint32_t t0 = t[0];
     uint32_t t1 = t[1];
@@ -189,7 +185,7 @@ void lea192_keygen(uint8_t* out, const uint8_t* mk)
     uint32_t t4 = t[4];
     uint32_t t5 = t[5];
 
-    for(round = 0; round < LEA192_ROUNDS; ++round) {
+    for(size_t round = 0; round < LEA192_ROUNDS; ++round) {
         uint32_t delta = DELTA[round % 6];
         
         t0 = rol32(t0 + rol32(delta, round), 1);
@@ -224,14 +220,13 @@ void lea192_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
  */
 void lea256_keygen(uint8_t* out, const uint8_t* mk)
 {
+    const uint32_t* keys = (const uint32_t*) mk;
     uint32_t* rk = (uint32_t*) out;
-    uint32_t* keys = (uint32_t*) mk;
-    size_t round = 0;
 
     uint32_t t[8] = {0, };
     memcpy(t, keys, 8 * sizeof(uint32_t));
     
-    for(round = 0; round < LEA256_ROUNDS; ++round) {
+    for(size_t round = 0; round < LEA256_ROUNDS; ++round) {
         uint32_t delta = DELTA[round & 0x7];
         
         t[(6 * round) & 0x7] = rol32(t[(6 * round) & 0x7] + rol32(delta, round), 1);

@@ -1,7 +1,7 @@
 /**
- * The MIT License
+ * MIT License
  * 
- * Copyright (c) <2018> <Ilwoong Jeong, ilwoong.jeong@gmail.com>
+ * Copyright (c) 2018 Ilwoong Jeong, https://github.com/ilwoong
  * 
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
