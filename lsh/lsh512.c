@@ -245,4 +245,6 @@ void lsh512_final(lsh512_context* ctx, uint8_t* digest)
     for (size_t i = 0; i < 8; ++i) {
         result[i] = ctx->cv[i] ^ ctx->cv[i + 8];
     }
+
+    lsh512_init(ctx);
 }

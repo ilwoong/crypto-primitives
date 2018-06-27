@@ -213,4 +213,6 @@ void lsh256_final(lsh256_context* ctx, uint8_t* digest)
     for (size_t i = 0; i < 8; ++i) {
         result[i] = ctx->cv[i] ^ ctx->cv[i + 8];
     }
+
+    lsh256_init(ctx);
 }
