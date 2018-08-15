@@ -27,6 +27,16 @@
 
 #include "lsh.h"
 #include <string.h>
+#include <nmmintrin.h>
+
+typedef struct st_lsh512_sse4_context {
+    size_t bidx;
+    size_t length;
+    __m128i block[16];
+    __m128i cv[8];
+    __m128i tcv[8];
+    __m128i msg[8 * (28 + 1)];
+} lsh512_sse4_context;
 
 const static size_t NUMSTEP = 28;
 
@@ -103,88 +113,103 @@ const static uint64_t ALPHA_ODD = 7;
 	
 const static uint64_t BETA_EVEN = 59;
 const static uint64_t BETA_ODD= 3;
-	
-const static uint64_t GAMMA[] = {0, 16, 32, 48, 8, 24, 40, 56};
 
-static inline uint64_t rol64(uint64_t value, size_t rot) 
+
+const static uint64_t GAMMA[] = {
+    0x0706050403020100, 0x0d0c0b0a09080f0e, 0x0302010007060504, 0x09080f0e0d0c0b0a,
+	0x0605040302010007, 0x0c0b0a09080f0e0d, 0x0201000706050403, 0x080f0e0d0c0b0a09
+};
+
+static inline __m128i rol64(__m128i value, size_t rot)
 {
-    return (value << rot) | (value >> (64 - rot));
+    return _mm_slli_epi64(value, rot) | _mm_srli_epi64(value, 64 - rot);
 }
 
-static void expand_message(lsh512_context* ctx, const uint8_t* in)
+static inline __m128i swap_epi64(__m128i value)
 {
-    uint64_t* msg = ctx->msg;
-    memcpy(msg, in, 32 * sizeof(uint64_t));
+    return _mm_shuffle_epi32(value, _MM_SHUFFLE(1, 0, 3, 2));
+}
+
+static void expand_message(lsh512_sse4_context* ctx, const uint8_t* in)
+{
+    __m128i* msg = ctx->msg;
+    __m128i tmp;
+    for (size_t i = 0; i < 16; ++i) {
+        msg[i] = _mm_loadu_si128((__m128i*) in + i);
+    }
 
     for (size_t i = 2; i <= NUMSTEP; ++i) {
-        size_t idx = 16 * i;
-        msg[idx     ] = msg[idx - 16] + msg[idx - 29];
-        msg[idx +  1] = msg[idx - 15] + msg[idx - 30];
+        size_t idx = 8 * i;
 
-        msg[idx +  2] = msg[idx - 14] + msg[idx - 32];
-        msg[idx +  3] = msg[idx - 13] + msg[idx - 31];
+        tmp = swap_epi64(msg[idx - 15]);
+        msg[idx] = _mm_add_epi64(msg[idx - 8], tmp);
+        msg[idx + 1] = _mm_add_epi64(msg[idx - 7], msg[idx - 16]);
 
-        msg[idx +  4] = msg[idx - 12] + msg[idx - 25];
-        msg[idx +  5] = msg[idx - 11] + msg[idx - 28];
+        tmp = swap_epi64(msg[idx - 13]);
+        msg[idx + 2] = _mm_add_epi64(
+            msg[idx - 6], _mm_unpacklo_epi64(tmp, msg[idx - 14])
+        );
+        msg[idx + 3] = _mm_add_epi64(
+            msg[idx - 5], _mm_unpackhi_epi64(msg[idx - 14], tmp)
+        );
 
-        msg[idx +  6] = msg[idx - 10] + msg[idx - 27];
-        msg[idx +  7] = msg[idx -  9] + msg[idx - 26];
+        tmp = swap_epi64(msg[idx - 11]);
+        msg[idx + 4] = _mm_add_epi64(msg[idx - 4], tmp);
+        msg[idx + 5] = _mm_add_epi64(msg[idx - 3], msg[idx - 12]);
 
-        msg[idx +  8] = msg[idx -  8] + msg[idx - 21];
-        msg[idx +  9] = msg[idx -  7] + msg[idx - 22];
-
-        msg[idx + 10] = msg[idx -  6] + msg[idx - 24];
-        msg[idx + 11] = msg[idx -  5] + msg[idx - 23];
-
-        msg[idx + 12] = msg[idx -  4] + msg[idx - 17];
-        msg[idx + 13] = msg[idx -  3] + msg[idx - 20];
-
-        msg[idx + 14] = msg[idx -  2] + msg[idx - 19];
-        msg[idx + 15] = msg[idx -  1] + msg[idx - 18];
+        tmp = swap_epi64(msg[idx - 9]);
+        msg[idx + 6] = _mm_add_epi64(
+            msg[idx - 2], _mm_unpacklo_epi64(tmp, msg[idx - 10])
+        );
+        msg[idx + 7] = _mm_add_epi64(
+            msg[idx - 1], _mm_unpackhi_epi64(msg[idx- 10], tmp)
+        );
     }
 }
 
-static inline void permute_word(lsh512_context* ctx)
-{
-    ctx->cv[ 0] = ctx->tcv[ 6];
-    ctx->cv[ 1] = ctx->tcv[ 4];
-    ctx->cv[ 2] = ctx->tcv[ 5];
-    ctx->cv[ 3] = ctx->tcv[ 7];
+static inline void permute_word(lsh512_sse4_context* ctx)
+{   
+    ctx->tcv[5] = swap_epi64(ctx->tcv[5]);
+    ctx->tcv[7] = swap_epi64(ctx->tcv[7]);
+
+    ctx->cv[0] = _mm_unpacklo_epi64(ctx->tcv[3], ctx->tcv[2]);
+    ctx->cv[1] = _mm_unpackhi_epi64(ctx->tcv[2], ctx->tcv[3]);
     
-    ctx->cv[ 4] = ctx->tcv[12];
-    ctx->cv[ 5] = ctx->tcv[15];
-    ctx->cv[ 6] = ctx->tcv[14];
-    ctx->cv[ 7] = ctx->tcv[13];
+    ctx->cv[2] = _mm_unpacklo_epi64(ctx->tcv[6], ctx->tcv[7]);
+    ctx->cv[3] = _mm_unpackhi_epi64(ctx->tcv[7], ctx->tcv[6]);
 
-    ctx->cv[ 8] = ctx->tcv[ 2];
-    ctx->cv[ 9] = ctx->tcv[ 0];
-    ctx->cv[10] = ctx->tcv[ 1];
-    ctx->cv[11] = ctx->tcv[ 3];
-
-    ctx->cv[12] = ctx->tcv[ 8];
-    ctx->cv[13] = ctx->tcv[11];
-    ctx->cv[14] = ctx->tcv[10];
-    ctx->cv[15] = ctx->tcv[ 9];
+    ctx->cv[4] = _mm_unpacklo_epi64(ctx->tcv[1], ctx->tcv[0]);
+    ctx->cv[5] = _mm_unpackhi_epi64(ctx->tcv[0], ctx->tcv[1]);
+    
+    ctx->cv[6] = _mm_unpacklo_epi64(ctx->tcv[4], ctx->tcv[5]);
+    ctx->cv[7] = _mm_unpackhi_epi64(ctx->tcv[5], ctx->tcv[4]);
 }
 
-static void step(lsh512_context* ctx, size_t idx, uint64_t alpha, uint64_t beta)
+static void step(lsh512_sse4_context* ctx, size_t idx, uint64_t alpha, uint64_t beta)
 {
-    uint64_t vl, vr;
-    for (size_t col = 0; col < 8; ++col) {
-        vl = ctx->cv[col    ] ^ ctx->msg[16 * idx + col    ];
-        vr = ctx->cv[col + 8] ^ ctx->msg[16 * idx + col + 8];
+    __m128i vl, vr;
+    __m128i step_constant[4];
 
-        vl = rol64(vl + vr, alpha) ^ STEP_CONSTANT[8 * idx + col];
-        vr = rol64(vl + vr, beta);
-        
-        ctx->tcv[col    ] = vl + vr;
-        ctx->tcv[col + 8] = rol64(vr, GAMMA[col]);
+    step_constant[0] = _mm_loadu_si128((const __m128i*) (STEP_CONSTANT + (8 * idx)));
+    step_constant[1] = _mm_loadu_si128((const __m128i*) (STEP_CONSTANT + (8 * idx)) + 1);
+    step_constant[2] = _mm_loadu_si128((const __m128i*) (STEP_CONSTANT + (8 * idx)) + 2);
+    step_constant[3] = _mm_loadu_si128((const __m128i*) (STEP_CONSTANT + (8 * idx)) + 3);
+
+    for (size_t col = 0; col < 4; ++col) {
+        vl = ctx->cv[col    ] ^ ctx->msg[8 * idx + col    ];
+        vr = ctx->cv[col + 4] ^ ctx->msg[8 * idx + col + 4];
+
+        vl = rol64(_mm_add_epi64(vl, vr), alpha) ^ step_constant[col];
+        vr = rol64(_mm_add_epi64(vl, vr), beta);
+
+        ctx->tcv[col    ] = _mm_add_epi64(vl, vr);
+        ctx->tcv[col + 4] = _mm_shuffle_epi8(vr, ((__m128i*)GAMMA)[col]);
     }
 
     permute_word(ctx);
 }
 
-static void compress(lsh512_context* ctx, const uint8_t* data)
+static void compress(lsh512_sse4_context* ctx, const uint8_t* data)
 {
     expand_message(ctx, data);
 
@@ -193,10 +218,9 @@ static void compress(lsh512_context* ctx, const uint8_t* data)
         step(ctx, i + 1, ALPHA_ODD, BETA_ODD);
     }
 
-    for (size_t i = 0; i < 16; ++i) {
-        ctx->cv[i] ^= ctx->msg[16 * NUMSTEP + i];
+    for (size_t i = 0; i < 8; ++i) {
+        ctx->cv[i] ^= ctx->msg[8 * NUMSTEP + i];
     }
-
 }
 
 void lsh512_init(lsh512_context* ctx)
@@ -218,8 +242,8 @@ void lsh512_update(lsh512_context* ctx, const uint8_t* data, size_t length)
         size_t gap = BLOCKSIZE - ctx->bidx;
 
         if (length >= gap) {
-            memcpy(ctx->block + ctx->bidx, data, gap);            
-            compress(ctx, ctx->block);
+            memcpy(ctx->block + ctx->bidx, data, gap);
+            compress((lsh512_sse4_context*)ctx, ctx->block);
             ctx->bidx = 0;
             length -= gap;
 
@@ -231,7 +255,7 @@ void lsh512_update(lsh512_context* ctx, const uint8_t* data, size_t length)
     }
     
     while (length >= BLOCKSIZE) {
-        compress(ctx, data);
+        compress((lsh512_sse4_context*)ctx, data);
         data += BLOCKSIZE;
         length -= BLOCKSIZE;
     }
@@ -248,7 +272,7 @@ void lsh512_final(lsh512_context* ctx, uint8_t* digest)
 
     ctx->block[(ctx->bidx)++] = (uint8_t) 0x80;
     memset(ctx->block + ctx->bidx, 0, BLOCKSIZE - ctx->bidx);
-    compress(ctx, ctx->block);
+    compress((lsh512_sse4_context*)ctx, ctx->block);
 
     for (size_t i = 0; i < 8; ++i) {
         result[i] = ctx->cv[i] ^ ctx->cv[i + 8];

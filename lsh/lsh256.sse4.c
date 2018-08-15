@@ -27,6 +27,16 @@
 
 #include "lsh.h"
 #include <string.h>
+#include <nmmintrin.h>
+
+typedef struct st_lsh256_sse4_context {
+    size_t bidx;
+    size_t length;
+    __m128i block[8];
+    __m128i cv[4];
+    __m128i tcv[4];
+    __m128i msg[4 * (26 + 1)];
+} lsh256_sse4_context;
 
 const static size_t NUMSTEP = 26;
 
@@ -71,81 +81,81 @@ const static uint32_t ALPHA_ODD = 5;
 	
 const static uint32_t BETA_EVEN = 1;
 const static uint32_t BETA_ODD= 17;
-	
-const static uint32_t GAMMA[] = {0, 8, 16, 24, 24, 16, 8, 0};
 
-static inline uint32_t rol32(uint32_t value, size_t rot) 
+const static uint32_t GAMMA[] = {
+    0x03020100, 0x06050407, 0x09080b0a, 0x0c0f0e0d,
+    0x00030201, 0x05040706, 0x0a09080b, 0x0f0e0d0c,
+};
+
+static inline __m128i rol32(__m128i value, size_t rot)
 {
-    return (value << rot) | (value >> (32 - rot));
+    return _mm_slli_epi32(value, rot) | _mm_srli_epi32(value, (32 - rot));
 }
 
-static void expand_message(lsh256_context* ctx, const uint8_t* in)
+static void expand_message(lsh256_sse4_context* ctx, const uint8_t* in)
 {
-    uint32_t* msg = ctx->msg;
-    memcpy(msg, in, 32 * sizeof(uint32_t));
+    __m128i* msg = ctx->msg;
+    msg[0] = _mm_loadu_si128((__m128i*) in);
+    msg[1] = _mm_loadu_si128((__m128i*) in + 1);
+    msg[2] = _mm_loadu_si128((__m128i*) in + 2);
+    msg[3] = _mm_loadu_si128((__m128i*) in + 3);
+    msg[4] = _mm_loadu_si128((__m128i*) in + 4);
+    msg[5] = _mm_loadu_si128((__m128i*) in + 5);
+    msg[6] = _mm_loadu_si128((__m128i*) in + 6);
+    msg[7] = _mm_loadu_si128((__m128i*) in + 7);
 
     for (size_t i = 2; i <= NUMSTEP; ++i) {
-        size_t idx = 16 * i;
-        msg[idx     ] = msg[idx - 16] + msg[idx - 29];
-        msg[idx +  1] = msg[idx - 15] + msg[idx - 30];
-        msg[idx +  2] = msg[idx - 14] + msg[idx - 32];
-        msg[idx +  3] = msg[idx - 13] + msg[idx - 31];
-        msg[idx +  4] = msg[idx - 12] + msg[idx - 25];
-        msg[idx +  5] = msg[idx - 11] + msg[idx - 28];
-        msg[idx +  6] = msg[idx - 10] + msg[idx - 27];
-        msg[idx +  7] = msg[idx -  9] + msg[idx - 26];
-        msg[idx +  8] = msg[idx -  8] + msg[idx - 21];
-        msg[idx +  9] = msg[idx -  7] + msg[idx - 22];
-        msg[idx + 10] = msg[idx -  6] + msg[idx - 24];
-        msg[idx + 11] = msg[idx -  5] + msg[idx - 23];
-        msg[idx + 12] = msg[idx -  4] + msg[idx - 17];
-        msg[idx + 13] = msg[idx -  3] + msg[idx - 20];
-        msg[idx + 14] = msg[idx -  2] + msg[idx - 19];
-        msg[idx + 15] = msg[idx -  1] + msg[idx - 18];
+        size_t idx = 4 * i;
+
+        msg[idx] = _mm_add_epi32(
+            msg[idx - 4], _mm_shuffle_epi32(msg[idx - 8], _MM_SHUFFLE(1, 0, 2, 3))
+        );
+        
+        msg[idx + 1] = _mm_add_epi32(
+            msg[idx - 3], _mm_shuffle_epi32(msg[idx - 7], _MM_SHUFFLE(2, 1, 0, 3))
+        );
+
+        msg[idx + 2] = _mm_add_epi32(
+            msg[idx - 2], _mm_shuffle_epi32(msg[idx - 6], _MM_SHUFFLE(1, 0, 2, 3))
+        );
+
+        msg[idx + 3] = _mm_add_epi32(
+            msg[idx - 1], _mm_shuffle_epi32(msg[idx - 5], _MM_SHUFFLE(2, 1, 0, 3))
+        );
     }
 }
 
-static inline void permute_word(lsh256_context* ctx)
+static inline void permute_word(lsh256_sse4_context* ctx)
 {
-    ctx->cv[ 0] = ctx->tcv[ 6];
-    ctx->cv[ 1] = ctx->tcv[ 4];
-    ctx->cv[ 2] = ctx->tcv[ 5];
-    ctx->cv[ 3] = ctx->tcv[ 7];
-    
-    ctx->cv[ 4] = ctx->tcv[12];
-    ctx->cv[ 5] = ctx->tcv[15];
-    ctx->cv[ 6] = ctx->tcv[14];
-    ctx->cv[ 7] = ctx->tcv[13];
-
-    ctx->cv[ 8] = ctx->tcv[ 2];
-    ctx->cv[ 9] = ctx->tcv[ 0];
-    ctx->cv[10] = ctx->tcv[ 1];
-    ctx->cv[11] = ctx->tcv[ 3];
-
-    ctx->cv[12] = ctx->tcv[ 8];
-    ctx->cv[13] = ctx->tcv[11];
-    ctx->cv[14] = ctx->tcv[10];
-    ctx->cv[15] = ctx->tcv[ 9];
+    ctx->cv[0] = _mm_shuffle_epi32(ctx->tcv[1], _MM_SHUFFLE(3,1,0,2));
+    ctx->cv[1] = _mm_shuffle_epi32(ctx->tcv[3], _MM_SHUFFLE(1,2,3,0));
+    ctx->cv[2] = _mm_shuffle_epi32(ctx->tcv[0], _MM_SHUFFLE(3,1,0,2));
+    ctx->cv[3] = _mm_shuffle_epi32(ctx->tcv[2], _MM_SHUFFLE(1,2,3,0));
 }
 
-static void step(lsh256_context* ctx, size_t idx, uint32_t alpha, uint32_t beta)
+static void step(lsh256_sse4_context* ctx, size_t idx, uint32_t alpha, uint32_t beta)
 {
-    uint32_t vl, vr;
-    for (size_t col = 0; col < 8; ++col) {
-        vl = ctx->cv[col    ] ^ ctx->msg[16 * idx + col    ];
-        vr = ctx->cv[col + 8] ^ ctx->msg[16 * idx + col + 8];
+    __m128i vl, vr;
+    __m128i step_constant[2];
 
-        vl = rol32(vl + vr, alpha) ^ STEP_CONSTANT[8 * idx + col];
-        vr = rol32(vl + vr, beta);
-        
-        ctx->tcv[col] = vl + vr;
-        ctx->tcv[col + 8] = rol32(vr, GAMMA[col]);
+    step_constant[0] = _mm_loadu_si128((const __m128i*) (STEP_CONSTANT + (8 * idx)));
+    step_constant[1] = _mm_loadu_si128((const __m128i*) (STEP_CONSTANT + (8 * idx)) + 1);
+
+    for (int col = 0; col < 2; ++col) {    
+        vl = ctx->cv[col    ] ^ ctx->msg[4 * idx + col    ];
+        vr = ctx->cv[col + 2] ^ ctx->msg[4 * idx + col + 2];
+
+        vl = rol32(_mm_add_epi32(vl, vr), alpha) ^ step_constant[col];
+        vr = rol32(_mm_add_epi32(vl, vr), beta);
+
+        ctx->tcv[col    ] = _mm_add_epi32(vl, vr);
+        ctx->tcv[col + 2] = _mm_shuffle_epi8(vr, ((__m128i*)GAMMA)[col]);
     }
 
     permute_word(ctx);
 }
 
-static void compress(lsh256_context* ctx, const uint8_t* data)
+static void compress(lsh256_sse4_context* ctx, const uint8_t* data)
 {
     expand_message(ctx, data);
 
@@ -154,8 +164,8 @@ static void compress(lsh256_context* ctx, const uint8_t* data)
         step(ctx, i + 1, ALPHA_ODD, BETA_ODD);
     }
 
-    for (size_t i = 0; i < 16; ++i) {
-        ctx->cv[i] ^= ctx->msg[16 * NUMSTEP + i];
+    for (size_t i = 0; i < 4; ++i) {
+        ctx->cv[i] ^= ctx->msg[4 * NUMSTEP + i];
     }
 }
 
@@ -178,8 +188,8 @@ void lsh256_update(lsh256_context* ctx, const uint8_t* data, size_t length)
         size_t gap = BLOCKSIZE - ctx->bidx;
 
         if (length >= gap) {
-            memcpy(ctx->block + ctx->bidx, data, gap);            
-            compress(ctx, ctx->block);
+            memcpy(ctx->block + ctx->bidx, data, gap);
+            compress((lsh256_sse4_context*)ctx, ctx->block);
             ctx->bidx = 0;
             length -= gap;
 
@@ -191,7 +201,7 @@ void lsh256_update(lsh256_context* ctx, const uint8_t* data, size_t length)
     }
     
     while (length >= BLOCKSIZE) {
-        compress(ctx, data);
+        compress((lsh256_sse4_context*)ctx, data);
         data += BLOCKSIZE;
         length -= BLOCKSIZE;
     }
@@ -208,7 +218,7 @@ void lsh256_final(lsh256_context* ctx, uint8_t* digest)
 
     ctx->block[(ctx->bidx)++] = (uint8_t) 0x80;
     memset(ctx->block + ctx->bidx, 0, BLOCKSIZE - ctx->bidx);
-    compress(ctx, ctx->block);
+    compress((lsh256_sse4_context*)ctx, ctx->block);
 
     for (size_t i = 0; i < 8; ++i) {
         result[i] = ctx->cv[i] ^ ctx->cv[i + 8];
