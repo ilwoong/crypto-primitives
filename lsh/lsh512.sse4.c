@@ -27,15 +27,15 @@
 
 #include "lsh.h"
 #include <string.h>
-#include <nmmintrin.h>
+#include <immintrin.h>
 
 typedef struct st_lsh512_sse4_context {
     size_t bidx;
     size_t length;
-    __m128i block[16];
-    __m128i cv[8];
-    __m128i tcv[8];
-    __m128i msg[8 * (28 + 1)];
+    __attribute__ ((aligned(32))) __m128i block[16];
+    __attribute__ ((aligned(32))) __m128i cv[8];
+    __attribute__ ((aligned(32))) __m128i tcv[8];
+    __attribute__ ((aligned(32))) __m128i msg[8 * (28 + 1)];
 } lsh512_sse4_context;
 
 const static size_t NUMSTEP = 28;
@@ -245,11 +245,13 @@ void lsh512_update(lsh512_context* ctx, const uint8_t* data, size_t length)
             memcpy(ctx->block + ctx->bidx, data, gap);
             compress((lsh512_sse4_context*)ctx, ctx->block);
             ctx->bidx = 0;
+            data += gap;
             length -= gap;
 
         } else {
             memcpy(ctx->block + ctx->bidx, data, length);
             ctx->bidx += length;
+            data += length;
             length = 0;
         }
     }

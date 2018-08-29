@@ -33,19 +33,19 @@
 typedef struct st_lsh256_context {
     size_t bidx;
     size_t length;
-    uint8_t block[128];
-    uint32_t cv[16];
-    uint32_t tcv[16];
-    uint32_t msg[16 * (26 + 1)];
+    __attribute__ ((aligned(32))) uint8_t block[128];
+    __attribute__ ((aligned(32))) uint32_t cv[16];
+    __attribute__ ((aligned(32))) uint32_t tcv[16];
+    __attribute__ ((aligned(32))) uint32_t msg[16 * (26 + 1)];
 } lsh256_context;
 
 typedef struct st_lsh512_context {
     size_t bidx;
     size_t length;
-    uint8_t block[256];
-    uint64_t cv[16];
-    uint64_t tcv[16];
-    uint64_t msg[16 * (28 + 1)];
+    __attribute__ ((aligned(32))) uint8_t block[256];
+    __attribute__ ((aligned(32))) uint64_t cv[16];
+    __attribute__ ((aligned(32))) uint64_t tcv[16];
+    __attribute__ ((aligned(32))) uint64_t msg[16 * (28 + 1)];
 } lsh512_context;
 
 void lsh256_init(lsh256_context* ctx);

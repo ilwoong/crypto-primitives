@@ -181,11 +181,13 @@ void lsh256_update(lsh256_context* ctx, const uint8_t* data, size_t length)
             memcpy(ctx->block + ctx->bidx, data, gap);            
             compress(ctx, ctx->block);
             ctx->bidx = 0;
+            data += gap;
             length -= gap;
 
         } else {
             memcpy(ctx->block + ctx->bidx, data, length);
             ctx->bidx += length;
+            data += length;
             length = 0;
         }
     }

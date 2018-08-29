@@ -1,7 +1,7 @@
 #include "lsh.h"
 #include <stdio.h>
 
-void print_hex(const uint8_t* data, size_t count)
+static void print_hex(const uint8_t* data, size_t count)
 {
     for (size_t i = 0; i < count; ++i) {
         printf("%02x", data[i]);
@@ -46,7 +46,7 @@ void test_lsh512()
 
     lsh512_context ctx;
     lsh512_init(&ctx);
-    lsh512_update(&ctx, data, 256);
+    lsh512_update(&ctx, data, 384);
     lsh512_final(&ctx, digest);
 
     print_hex(digest, 64);
