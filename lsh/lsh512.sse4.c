@@ -107,17 +107,17 @@ const static uint64_t STEP_CONSTANT[] = {
     0x8eeaeb91d66ed539L, 0x73d8a1549dfd7e06L, 0x0387f2ffe3f13a9bL, 0xa5004995aac15193L,
     0x682f81c73efdda0dL, 0x2fb55925d71d268dL, 0xcc392d2901e58a3dL, 0xaa666ab975724a42L,
 };
-	
+
 const static uint64_t ALPHA_EVEN = 23;
 const static uint64_t ALPHA_ODD = 7;
-	
+
 const static uint64_t BETA_EVEN = 59;
 const static uint64_t BETA_ODD= 3;
 
 
 const static uint64_t GAMMA[] = {
     0x0706050403020100, 0x0d0c0b0a09080f0e, 0x0302010007060504, 0x09080f0e0d0c0b0a,
-	0x0605040302010007, 0x0c0b0a09080f0e0d, 0x0201000706050403, 0x080f0e0d0c0b0a09
+    0x0605040302010007, 0x0c0b0a09080f0e0d, 0x0201000706050403, 0x080f0e0d0c0b0a09
 };
 
 static inline __m128i rol64(__m128i value, size_t rot)

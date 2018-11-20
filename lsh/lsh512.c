@@ -97,13 +97,13 @@ const static uint64_t STEP_CONSTANT[] = {
     0x8eeaeb91d66ed539L, 0x73d8a1549dfd7e06L, 0x0387f2ffe3f13a9bL, 0xa5004995aac15193L,
     0x682f81c73efdda0dL, 0x2fb55925d71d268dL, 0xcc392d2901e58a3dL, 0xaa666ab975724a42L,
 };
-	
+
 const static uint64_t ALPHA_EVEN = 23;
 const static uint64_t ALPHA_ODD = 7;
-	
+
 const static uint64_t BETA_EVEN = 59;
 const static uint64_t BETA_ODD= 3;
-	
+
 const static uint64_t GAMMA[] = {0, 16, 32, 48, 8, 24, 40, 56};
 
 static inline uint64_t rol64(uint64_t value, size_t rot) 
