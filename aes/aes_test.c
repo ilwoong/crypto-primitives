@@ -28,6 +28,7 @@
 #include "aes.h"
 #include <stdio.h>
 #include <string.h>
+#include <omp.h>
 
 static void print_hex(const char* title, const uint8_t* data, size_t count)
 {
@@ -127,10 +128,36 @@ static int aes256_self_test()
     compare_block("AES-256", pt, ct, enc, dec);
 }
 
+static void benchmark(size_t iterations)
+{
+    uint8_t mk[16] = {0};
+    uint8_t pt[16] = {0};
+    uint8_t ct[16] = {0};
+
+    uint8_t enc[16] = {0};
+    uint8_t dec[16] = {0};
+
+    uint8_t rks[(AES128_ROUNDS + 1) * 16] = {0,};
+    aes128_keygen(rks, mk);
+
+    double start = omp_get_wtime();
+
+    for (size_t i = 0; i < iterations; ++i) {
+        aes128_encrypt(enc, pt, rks);
+    }
+
+    double elapsed = omp_get_wtime() - start;
+
+    printf("Elapsed for %ld encryptions: %lf sec\n", iterations, elapsed);
+}
+
 int main()
 {
     aes128_self_test();
     aes192_self_test();
     aes256_self_test();
+
+    benchmark(1000);
+
     return 0;
 }
