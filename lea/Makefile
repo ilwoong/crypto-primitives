@@ -1,10 +1,17 @@
 CC = gcc
-TARGET = lea_test
+CFLAGS = 
+LDFLAGS = -lgomp
+TARGET = lea learef
 
-.PHONY: clean
+.PHONY: all clean
 
-$(TARGET):
-	$(CC) *.c -o $@
+all : lea learef
+
+lea: lea.c lea_test.c
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+learef: lea.ref.c lea_test.c
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 clean:
 	rm $(TARGET) -rf

@@ -10,7 +10,7 @@ all: $(TARGETS)
 aes : aes.c sbox.c gf256.c aes_test.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-aeslut1 : aes.lut1.c gf256.c aes_test.c
+aeslut1 : aes.lut1.c aes_test.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 aeslut2 : aes.lut2.c aes_test.c
