@@ -570,7 +570,7 @@ void aes192_keygen(uint8_t* rks, const uint8_t* mk)
 
     memcpy(rk, key, 24);
 
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 7; ++i) {
         rk[6] = rk[0] ^ sub_word(rot32r8(rk[5])) ^ RC[i];
         rk[7] = rk[1] ^ rk[6];
         rk[8] = rk[2] ^ rk[7];
@@ -580,6 +580,11 @@ void aes192_keygen(uint8_t* rks, const uint8_t* mk)
 
         rk += 6;
     }
+
+    rk[6] = rk[0] ^ sub_word(rot32r8(rk[5])) ^ RC[7];
+    rk[7] = rk[1] ^ rk[6];
+    rk[8] = rk[2] ^ rk[7];
+    rk[9] = rk[3] ^ rk[8];
 }
 
 void aes192_encrypt(uint8_t* ct, const uint8_t* pt, const uint8_t* rks)
