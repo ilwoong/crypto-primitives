@@ -28,6 +28,7 @@
 #include "lea.h"
 #include <stdio.h>
 #include <string.h>
+#include <omp.h>
     
 static void print_array(const uint8_t* array, size_t count)
 {
@@ -121,11 +122,36 @@ void test_lea256()
     print_result("LEA256", pt, encrypted, ct, decrypted);
 }
 
+static void benchmark(size_t iterations)
+{
+    uint8_t mk[16] = {0};
+    uint8_t pt[16] = {0};
+    uint8_t ct[16] = {0};
+
+    uint8_t enc[16] = {0};
+    uint8_t dec[16] = {0};
+
+    uint8_t rks[24 * 24] = {0,};
+    lea128_keygen(rks, mk);
+
+    double start = omp_get_wtime();
+
+    for (size_t i = 0; i < iterations; ++i) {
+        lea128_encrypt(enc, pt, rks);
+    }
+
+    double elapsed = omp_get_wtime() - start;
+
+    printf("Elapsed for %ld encryptions: %lf sec\n", iterations, elapsed);
+}
+
 int main()
 {
     test_lea128();
     test_lea192();
     test_lea256();
+
+    benchmark(1000);
 
     return 0;
 }
