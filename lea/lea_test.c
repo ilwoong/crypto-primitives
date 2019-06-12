@@ -151,7 +151,7 @@ int main()
     test_lea192();
     test_lea256();
 
-    benchmark(1000);
+    benchmark(12000);
 
     return 0;
 }

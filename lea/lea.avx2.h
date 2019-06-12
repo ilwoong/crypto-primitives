@@ -27,23 +27,20 @@
 
 #pragma once
 
+#include "lea.h"
 #include <stdint.h>
 #include <stddef.h>
 
-const static size_t LEA128_ROUNDS = 24;
-const static size_t LEA192_ROUNDS = 28;
-const static size_t LEA256_ROUNDS = 32;
+void lea128_encrypt_8blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void lea128_decrypt_8blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void lea192_encrypt_8blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void lea192_decrypt_8blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void lea256_encrypt_8blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void lea256_decrypt_8blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
 
-void lea128_keygen(uint8_t* out, const uint8_t* mk);
-void lea192_keygen(uint8_t* out, const uint8_t* mk);
-void lea256_keygen(uint8_t* out, const uint8_t* mk);
-
-void lea128_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
-void lea128_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
-
-void lea192_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
-void lea192_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
-
-void lea256_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
-void lea256_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
-
+void lea128_encrypt_16blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void lea128_decrypt_16blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void lea192_encrypt_16blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void lea192_decrypt_16blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void lea256_encrypt_16blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void lea256_decrypt_16blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);

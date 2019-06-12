@@ -1,17 +1,20 @@
 CC = gcc
-CFLAGS = 
+CFLAGS = -O2
 LDFLAGS = -lgomp
-TARGET = lea learef
+TARGET = lea lea_ref lea_avx2
 
 .PHONY: all clean
 
-all : lea learef
+all : $(TARGET)
 
-lea: lea.c lea_test.c
+lea: lea.keyschedule.c lea.c lea_test.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-learef: lea.ref.c lea_test.c
+lea_ref: lea.keyschedule.c lea.ref.c lea_test.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+lea_avx2: lea.keyschedule.c lea.avx2.c lea_test.avx2.c
+	$(CC) $(CFLAGS) -mavx2 $^ -o $@ $(LDFLAGS)
 
 clean:
 	rm $(TARGET) -rf
