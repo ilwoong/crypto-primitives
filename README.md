@@ -24,6 +24,7 @@ LEA is a 128-bit block cipher algorithm which supports 128, 192, and 256-bit key
 
 #### Implementations
 * C implementation
+* SIMD implementation using AVX2
 
 ### LSH
 LSH is a hash function family which consists of LSH-256 and LSH-512.
