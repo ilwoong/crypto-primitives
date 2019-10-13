@@ -13,6 +13,12 @@ AES is a block cipher algorithm which supports 128, 192, and 256-bit key.
 * AES lookup table implementation - sbox and mixcolumn together
 * AES-NI implementation
 
+### ARIA
+ARIA is a block cipher algorithm which supports 128, 192, and 256-bit key.
+
+#### Implementations
+* ARIA reference implementation
+
 ### CHAM
 CHAM is a family of block ciphers which consists of CHAM-64/128, CHAM-128/128, and CHAM-128/256.
 

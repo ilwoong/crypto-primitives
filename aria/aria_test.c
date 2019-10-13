@@ -110,7 +110,7 @@ void test_aria192()
     uint8_t encrypted[16] = {0,};
     uint8_t decrypted[16] = {0,};
 
-    uint8_t rks[4 * 6 * 28] = {0};
+    uint8_t rks[15 * 16] = {0};
 
     aria192_expand_key_enc(rks, key);
     aria192_encrypt(encrypted, pt, rks);
@@ -140,7 +140,7 @@ void test_aria256()
     uint8_t encrypted[16] = {0,};
     uint8_t decrypted[16] = {0,};
 
-    uint8_t rks[4 * 6 * 32] = {0};
+    uint8_t rks[17 * 16] = {0};
 
     aria256_expand_key_enc(rks, key);
     aria256_encrypt(encrypted, pt, rks);
