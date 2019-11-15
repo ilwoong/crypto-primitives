@@ -27,6 +27,9 @@
 
 #pragma once
 
+#ifndef __CRYPTO_PRIMITIVES_LEA_AVX2_H__
+#define __CRYPTO_PRIMITIVES_LEA_AVX2_H__
+
 #include "lea.h"
 #include <stdint.h>
 #include <stddef.h>
@@ -44,3 +47,5 @@ void lea192_encrypt_16blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
 void lea192_decrypt_16blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
 void lea256_encrypt_16blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
 void lea256_decrypt_16blk(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+
+#endif

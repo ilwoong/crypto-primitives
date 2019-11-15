@@ -27,6 +27,9 @@
 
 #pragma once
 
+#ifndef __CRYPTO_PRIMITIVES_LEA_H__
+#define __CRYPTO_PRIMITIVES_LEA_H__
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -47,3 +50,4 @@ void lea192_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
 void lea256_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
 void lea256_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
 
+#endif
