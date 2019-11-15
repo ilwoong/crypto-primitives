@@ -28,11 +28,7 @@
 #include "lea.h"
 #include <string.h>
 
-#if _MSC_VER && !__INTEL_COMPILER
-    #define FORCE_INLINE __force_inline
-#else
-    #define FORCE_INLINE __attribute__((always_inline)) inline
-#endif
+#include "inline.inc"
 
 const static uint32_t DELTA[8]= {
     0xc3efe9db, 0x44626b02, 0x79e27c8a, 0x78df30ec, 0x715ea49e, 0xc785da0a, 0xe04ef22a, 0xe5c40957,
