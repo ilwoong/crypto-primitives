@@ -6,6 +6,9 @@ C implementations of cryptograhpic algorithm privitives.
 ### AES
 AES is a block cipher algorithm which supports 128, 192, and 256-bit key.
 
+#### Standardization
+* ISO/IEC 18033-3:2005
+
 #### Implementations
 * AES reference implementation
 * AES lookup table implementation - sbox only
@@ -25,8 +28,21 @@ CHAM is a family of block ciphers which consists of CHAM-64/128, CHAM-128/128, a
 #### Implementations
 * C implementation
 
+### HIGHT
+HIGHT is a 64-bit block cipher algorithm which supports 128-bit key.
+
+#### Standardization
+* ISO/IEC 18033-3:2010
+
+#### Implementations
+* C reference implementation
+
 ### LEA
-LEA is a 128-bit block cipher algorithm which supports 128, 192, and 256-bit key.
+LEA is a 128-bit block cipher algorithm which supports 128, 192, and 256-bit key. 
+
+#### Standardization
+* ISO/IEC 29192-2:2019
+* KS X 3246
 
 #### Implementations
 * C implementation
@@ -34,6 +50,9 @@ LEA is a 128-bit block cipher algorithm which supports 128, 192, and 256-bit key
 
 ### LSH
 LSH is a hash function family which consists of LSH-256 and LSH-512.
+
+#### Standardization
+* KS X 3262
 
 #### Implementations
 * C implementation
