@@ -36,6 +36,7 @@ HIGHT is a 64-bit block cipher algorithm which supports 128-bit key.
 
 #### Implementations
 * C reference implementation
+* C lookup table implementation
 
 ### LEA
 LEA is a 128-bit block cipher algorithm which supports 128, 192, and 256-bit key. 

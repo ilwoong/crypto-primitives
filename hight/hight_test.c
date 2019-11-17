@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <omp.h>
 
 static void print_array(const uint8_t* array, size_t count)
 {
@@ -62,20 +63,38 @@ static void print_result(const char* title, const uint8_t* pt, const uint8_t* en
     printf("\n");
 }
 
+void benchmark(size_t iterations) {
+    size_t i = 0;
+    uint8_t mk[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
+    uint8_t pt[8] = {0, };
+    uint8_t enc[8] = {0, };
+    uint8_t rks[136] = {0, };
+
+    hight_keygen(rks, mk);
+    double elapsed = omp_get_wtime();    
+    for (i = 0; i < iterations; ++i) {
+        hight_encrypt(enc, pt, rks);
+    }
+    elapsed = omp_get_wtime() - elapsed;
+
+    printf("Elapsed time for %ld iterations: %lf\n", iterations, elapsed);
+}
+
 int main(int argc, const char** argv)
 {
     uint8_t pt[] = {0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00};
     uint8_t ct[] = {0xd8, 0xe6, 0x43, 0xe5, 0x72, 0x9f, 0xce, 0x23};
     uint8_t mk[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
-    uint8_t rks[500] = {0};
+    uint8_t rks[136] = {0};
     uint8_t enc[8] = {0};
     uint8_t dec[8] = {0};
 
     hight_keygen(rks, mk);
     hight_encrypt(enc, pt, rks);
-    hight_decrypt(dec, enc, rks);
+    hight_decrypt(dec, ct, rks);
 
     print_result("HIGHT", pt, enc, ct, dec);
+    benchmark(1000000);
 
     return 0;
 }
