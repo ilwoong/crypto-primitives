@@ -230,15 +230,8 @@ void seed_keygen(uint8_t* rks, const uint8_t* mk)
 
     size_t idx = 0;
     for (size_t i = 0; i < 16; ++i) {
-        /**/
         rk[idx++] = function_g(blk[0] + blk[2] - KC[i]);
         rk[idx++] = function_g(blk[1] - blk[3] + KC[i]);
-        /**/
-
-        /*
-        rk[idx++] = function_g(blk[1] - blk[3] + KC[i]);
-        rk[idx++] = function_g(blk[0] + blk[2] - KC[i]);
-        /**/
 
         if ((i & 0x1) == 0) {
             lhs[0] = ror64(lhs[0], 8);
@@ -248,7 +241,7 @@ void seed_keygen(uint8_t* rks, const uint8_t* mk)
     }
 }
 
-void change_endian(void* out, const void* in, size_t count) 
+static void change_endian(void* out, const void* in, size_t count) 
 {
     uint32_t* pout = (uint32_t*) out;
     const uint32_t* pin = (const uint32_t*) in;
