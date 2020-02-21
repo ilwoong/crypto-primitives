@@ -58,3 +58,14 @@ LSH is a hash function family which consists of LSH-256 and LSH-512.
 #### Implementations
 * C implementation
 * SIMD implementation using SSE4, and AVX2
+
+### SEED
+SEED is a 128-bit block cipher algorithm which supports 128-bit key. 
+
+#### Standardization
+* TTAS.KO-12.0004/R1
+* ISO/IEC 18033-3 Part 3
+* IETF RFC 4269: The SEED Encryption Algorithm
+
+#### Implementations
+* Lookup table implementation
