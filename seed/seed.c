@@ -187,13 +187,6 @@ static inline uint32_t function_g(uint32_t in)
     return SS3[x[3]] ^ SS2[x[2]] ^ SS1[x[1]] ^ SS0[x[0]];
 }
 
-
-static inline uint32_t function_g2(uint32_t in)
-{
-    const uint8_t* x = (const uint8_t*) &in;
-    return SS3[x[0]] ^ SS2[x[1]] ^ SS1[x[2]] ^ SS0[x[3]];
-}
-
 static void feistel_function(uint32_t* out, const uint32_t* in, const uint32_t* rk)
 {
     bitwise_xor(out, in, rk, 2);
