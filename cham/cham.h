@@ -29,15 +29,15 @@
 #include <stddef.h>
 
 void cham64_keygen(uint8_t* rks, const uint8_t* mk);
-void cham64_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
-void cham64_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void cham64_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks);
+void cham64_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks);
 
 void cham128_keygen(uint8_t* rks, const uint8_t* mk);
-void cham128_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
-void cham128_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void cham128_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks);
+void cham128_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks);
 
 void cham256_keygen(uint8_t* rks, const uint8_t* mk);
-void cham256_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
-void cham256_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void cham256_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks);
+void cham256_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks);
 
 #endif

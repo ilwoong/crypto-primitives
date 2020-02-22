@@ -1,10 +1,10 @@
 CC = gcc
 CFLAGS = -O2
-TARGET = cham_test
+TARGET = test_cham
 
 .PHONY: clean
 
-cham_test: cham_test.c cham.c
+test_cham: test_cham.c cham.c
 	$(CC) $(CFLAGS) $^ -o $@
 
 clean:

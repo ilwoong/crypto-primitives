@@ -1,28 +1,25 @@
 /**
- * MIT License
+ * The MIT License
+ *
+ * Copyright (c) 2020 Ilwoong Jeong (https://github.com/ilwoong)
  * 
- * Copyright (c) 2018 Ilwoong Jeong, https://github.com/ilwoong
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  * 
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  * 
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 #include <string.h>
@@ -468,6 +465,40 @@ static void sub_bytes_and_mix_columns(uint8_t* in)
     }
 }
 
+static inline void encrypt_round(uint8_t* block, const uint8_t* rk)
+{
+    shift_rows(block);
+    sub_bytes_and_mix_columns(block);
+    add_round_keys(block, rk);
+}
+
+static inline void encrypt_last_round(uint8_t* block, const uint8_t* rk)
+{
+    sub_bytes(block);
+    shift_rows(block);
+    add_round_keys(block, rk);
+}
+
+static void aes_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks, size_t rounds)
+{
+    uint8_t block[16] = {0};
+    memcpy(block, src, 16);
+    transpose(block);
+
+    add_round_keys(block, rks);
+    rks += 16;
+
+    for (int i = 0; i < rounds - 1; ++i, rks += 16)
+    {
+        encrypt_round(block, rks);
+    }
+    
+    encrypt_last_round(block, rks);
+
+    transpose(block);
+    memcpy(dst, block, 16);
+}
+
 static void inv_sub_bytes_and_mix_columns(uint8_t* in)
 {
     for (int i = 0; i < 4; ++i) {
@@ -486,34 +517,25 @@ static void inv_mix_columns(uint8_t* in)
     inv_sub_bytes_and_mix_columns(in);
 }
 
-static void aes_encrypt(uint8_t* ct, const uint8_t* pt, const uint8_t* rks, size_t rounds)
+static inline void decrypt_round(uint8_t* block, const uint8_t* rk)
 {
-    uint8_t block[16] = {0};
-    memcpy(block, pt, 16);
-    transpose(block);
-
-    add_round_keys(block, rks);
-    rks += 16;
-
-    for (int i = 0; i < rounds - 1; ++i, rks += 16)
-    {
-        shift_rows(block);
-        sub_bytes_and_mix_columns(block);
-        add_round_keys(block, rks);
-    }
-
-    sub_bytes(block);
-    shift_rows(block);
-    add_round_keys(block, rks);
-
-    transpose(block);
-    memcpy(ct, block, 16);
+    inv_shift_rows(block);
+    inv_sub_bytes(block);
+    add_round_keys(block, rk);
+    inv_mix_columns(block);
 }
 
-static void aes_decrypt(uint8_t* pt, const uint8_t* ct, const uint8_t* rks, size_t rounds)
+static inline void decrypt_last_round(uint8_t* block, const uint8_t* rk)
+{
+    inv_sub_bytes(block);
+    inv_shift_rows(block);
+    add_round_keys(block, rk);
+}
+
+static void aes_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks, size_t rounds)
 {
     uint8_t block[16] = {0};
-    memcpy(block, ct, 16);
+    memcpy(block, src, 16);
     transpose(block);
 
     rks += 16 * rounds;
@@ -523,18 +545,13 @@ static void aes_decrypt(uint8_t* pt, const uint8_t* ct, const uint8_t* rks, size
 
     for (int i = 0; i < rounds - 1; ++i, rks -= 16)
     {  
-        inv_shift_rows(block);
-        inv_sub_bytes(block);
-        add_round_keys(block, rks);
-        inv_mix_columns(block);
+        decrypt_round(block, rks);
     }
 
-    inv_sub_bytes(block);
-    inv_shift_rows(block);
-    add_round_keys(block, rks);
+    decrypt_last_round(block, rks);
 
     transpose(block);
-    memcpy(pt, block, 16);
+    memcpy(dst, block, 16);
 }
 
 void aes128_keygen(uint8_t* rks, const uint8_t* mk)
@@ -553,14 +570,14 @@ void aes128_keygen(uint8_t* rks, const uint8_t* mk)
     }
 }
 
-void aes128_encrypt(uint8_t* ct, const uint8_t* pt, const uint8_t* rks)
+void aes128_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aes_encrypt(ct, pt, rks, AES128_ROUNDS);
+    aes_encrypt(dst, src, rks, AES128_ROUNDS);
 }
 
-void aes128_decrypt(uint8_t* pt, const uint8_t* ct, const uint8_t* rks)
+void aes128_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aes_decrypt(pt, ct, rks, AES128_ROUNDS);
+    aes_decrypt(dst, src, rks, AES128_ROUNDS);
 }
 
 void aes192_keygen(uint8_t* rks, const uint8_t* mk)
@@ -587,14 +604,14 @@ void aes192_keygen(uint8_t* rks, const uint8_t* mk)
     rk[9] = rk[3] ^ rk[8];
 }
 
-void aes192_encrypt(uint8_t* ct, const uint8_t* pt, const uint8_t* rks)
+void aes192_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aes_encrypt(ct, pt, rks, AES192_ROUNDS);
+    aes_encrypt(dst, src, rks, AES192_ROUNDS);
 }
 
-void aes192_decrypt(uint8_t* pt, const uint8_t* ct, const uint8_t* rks)
+void aes192_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aes_decrypt(pt, ct, rks, AES192_ROUNDS);
+    aes_decrypt(dst, src, rks, AES192_ROUNDS);
 }
 
 void aes256_keygen(uint8_t* rks, const uint8_t* mk)
@@ -623,12 +640,12 @@ void aes256_keygen(uint8_t* rks, const uint8_t* mk)
     }
 }
 
-void aes256_encrypt(uint8_t* ct, const uint8_t* pt, const uint8_t* rks)
+void aes256_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aes_encrypt(ct, pt, rks, AES256_ROUNDS);
+    aes_encrypt(dst, src, rks, AES256_ROUNDS);
 }
 
-void aes256_decrypt(uint8_t* pt, const uint8_t* ct, const uint8_t* rks)
+void aes256_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aes_decrypt(pt, ct, rks, AES256_ROUNDS);
+    aes_decrypt(dst, src, rks, AES256_ROUNDS);
 }

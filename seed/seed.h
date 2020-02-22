@@ -29,7 +29,7 @@
 #include <stddef.h>
 
 void seed_keygen(uint8_t* rks, const uint8_t* mk);
-void seed_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
-void seed_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks);
+void seed_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks);
+void seed_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks);
 
 #endif

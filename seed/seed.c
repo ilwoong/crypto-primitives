@@ -5,7 +5,7 @@
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
+ * in the Software withdst restriction, including withdst limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
@@ -13,12 +13,12 @@
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHdst WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * dst OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
 
@@ -174,33 +174,33 @@ static const uint32_t SS3[] = {
     0xc9d1d819, 0x4c404c0c, 0x83838003, 0x8f838c0f, 0xcec2cc0e, 0x0b33383b, 0x4a42480a, 0x87b3b437,
 };
 
-static inline void bitwise_xor(uint32_t* out, const uint32_t* lhs, const uint32_t* rhs, size_t count)
+static inline void bitwise_xor(uint32_t* dst, const uint32_t* lhs, const uint32_t* rhs, size_t count)
 {
     for (size_t i = 0; i < count; ++i) {
-        out[i] = lhs[i] ^ rhs[i];
+        dst[i] = lhs[i] ^ rhs[i];
     }
 }
 
-static inline uint32_t function_g(uint32_t in)
+static inline uint32_t function_g(uint32_t src)
 {
-    const uint8_t* x = (const uint8_t*) &in;
+    const uint8_t* x = (const uint8_t*) &src;
     return SS3[x[3]] ^ SS2[x[2]] ^ SS1[x[1]] ^ SS0[x[0]];
 }
 
-static void feistel_function(uint32_t* out, const uint32_t* in, const uint32_t* rk)
+static void feistel_function(uint32_t* dst, const uint32_t* src, const uint32_t* rk)
 {
-    bitwise_xor(out, in, rk, 2);
+    bitwise_xor(dst, src, rk, 2);
         
-    out[1] ^= out[0];
-    out[1] = function_g(out[1]);
+    dst[1] ^= dst[0];
+    dst[1] = function_g(dst[1]);
     
-    out[0] += out[1];
-    out[0] = function_g(out[0]);
+    dst[0] += dst[1];
+    dst[0] = function_g(dst[0]);
 
-    out[1] += out[0];
-    out[1] = function_g(out[1]);
+    dst[1] += dst[0];
+    dst[1] = function_g(dst[1]);
 
-    out[0] += out[1];
+    dst[0] += dst[1];
 }
 
 static inline uint64_t ror64(uint64_t value, size_t rot)
@@ -234,25 +234,25 @@ void seed_keygen(uint8_t* rks, const uint8_t* mk)
     }
 }
 
-static void change_endian(void* out, const void* in, size_t count) 
+static void change_endian(void* dst, const void* in, size_t count) 
 {
-    uint32_t* pout = (uint32_t*) out;
+    uint32_t* pdst = (uint32_t*) dst;
     const uint32_t* pin = (const uint32_t*) in;
 
     for (size_t i = 0; i < count; ++i) {
-        pout[i] = 0;
-        pout[i] |= (pin[i] & 0x000000ff) << 24;
-        pout[i] |= (pin[i] & 0x0000ff00) << 8;
-        pout[i] |= (pin[i] & 0x00ff0000) >> 8;
-        pout[i] |= (pin[i] & 0xff000000) >> 24;
+        pdst[i] = 0;
+        pdst[i] |= (pin[i] & 0x000000ff) << 24;
+        pdst[i] |= (pin[i] & 0x0000ff00) << 8;
+        pdst[i] |= (pin[i] & 0x00ff0000) >> 8;
+        pdst[i] |= (pin[i] & 0xff000000) >> 24;
     }
 }
 
-void seed_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void seed_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
     uint32_t blk[4] = {0};
     uint32_t tmp[2] = {0};
-    change_endian(blk, in, 4);
+    change_endian(blk, src, 4);
 
     uint32_t* lhs = blk;
     uint32_t* rhs = blk + 2;
@@ -268,15 +268,15 @@ void seed_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
         rk += 2;
     }
 
-    change_endian(out, rhs, 2);
-    change_endian(out + 8, lhs, 2);
+    change_endian(dst, rhs, 2);
+    change_endian(dst + 8, lhs, 2);
 }
 
-void seed_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void seed_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
     uint32_t blk[4] = {0};
     uint32_t tmp[2] = {0};
-    change_endian(blk, in, 4);
+    change_endian(blk, src, 4);
 
     uint32_t* lhs = blk;
     uint32_t* rhs = blk + 2;
@@ -293,6 +293,6 @@ void seed_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
         rk -= 2;
     }
 
-    change_endian(out, rhs, 2);
-    change_endian(out + 8, lhs, 2);
+    change_endian(dst, rhs, 2);
+    change_endian(dst + 8, lhs, 2);
 }

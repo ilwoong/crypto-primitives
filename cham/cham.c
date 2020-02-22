@@ -68,10 +68,10 @@ void cham64_keygen(uint8_t* rks, const uint8_t* mk)
     }
 }
 
-void cham64_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void cham64_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
     uint16_t blk[4] = {0};
-    memcpy(blk, in, BLOCKSIZE_64);
+    memcpy(blk, src, BLOCKSIZE_64);
     
     const uint16_t* rk = (const uint16_t*) rks;
     uint16_t rc = 0;
@@ -90,13 +90,13 @@ void cham64_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
         rk = (rk == (const uint16_t*) rks) ? rk + 8 : rk - 8;
     }
 
-    memcpy(out, blk, BLOCKSIZE_64);
+    memcpy(dst, blk, BLOCKSIZE_64);
 }
 
-void cham64_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void cham64_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
     uint16_t blk[4] = {0};
-    memcpy(blk, in, BLOCKSIZE_64);
+    memcpy(blk, src, BLOCKSIZE_64);
     
     const uint16_t* rk = (const uint16_t*) rks;
     uint16_t rc = CHAM_64_128_ROUNDS;
@@ -115,7 +115,7 @@ void cham64_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
         rk = (rk == (const uint16_t*) rks) ? rk + 8 : rk - 8;
     }
 
-    memcpy(out, blk, BLOCKSIZE_64);
+    memcpy(dst, blk, BLOCKSIZE_64);
 }
 
 /**
@@ -133,10 +133,10 @@ void cham128_keygen(uint8_t* rks, const uint8_t* mk)
     }
 }
 
-void cham128_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void cham128_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
     uint32_t blk[4] = {0};
-    memcpy(blk, in, BLOCKSIZE_128);
+    memcpy(blk, src, BLOCKSIZE_128);
     
     const uint32_t* rk = (const uint32_t*) rks;
     uint32_t rc = 0;
@@ -153,13 +153,13 @@ void cham128_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
         blk[3] = rol32((blk[3] ^ (rc++)) + (rol32(blk[0], 8) ^ rk[7]), 1);
     }
 
-    memcpy(out, blk, BLOCKSIZE_128);
+    memcpy(dst, blk, BLOCKSIZE_128);
 }
 
-void cham128_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void cham128_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
     uint32_t blk[4] = {0};
-    memcpy(blk, in, BLOCKSIZE_128);
+    memcpy(blk, src, BLOCKSIZE_128);
     
     const uint32_t* rk = (const uint32_t*) rks;
     uint32_t rc = CHAM_128_128_ROUNDS;
@@ -176,7 +176,7 @@ void cham128_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
         blk[0] = (ror32(blk[0], 8) - (rol32(blk[1], 1) ^ rk[0])) ^ (--rc);
     }
 
-    memcpy(out, blk, BLOCKSIZE_128);
+    memcpy(dst, blk, BLOCKSIZE_128);
 }
 
 /**
@@ -194,10 +194,10 @@ void cham256_keygen(uint8_t* rks, const uint8_t* mk)
     }
 }
 
-void cham256_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void cham256_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
     uint32_t blk[4] = {0};
-    memcpy(blk, in, BLOCKSIZE_128);
+    memcpy(blk, src, BLOCKSIZE_128);
     
     const uint32_t* rk = (const uint32_t*) rks;
     uint32_t rc = 0;
@@ -216,13 +216,13 @@ void cham256_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
         rk = (rk == (const uint32_t*) rks) ? rk + 8 : rk - 8;
     }
 
-    memcpy(out, blk, BLOCKSIZE_128);
+    memcpy(dst, blk, BLOCKSIZE_128);
 }
 
-void cham256_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void cham256_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
     uint32_t blk[4] = {0};
-    memcpy(blk, in, BLOCKSIZE_128);
+    memcpy(blk, src, BLOCKSIZE_128);
     
     const uint32_t* rk = (const uint32_t*) rks;
     uint32_t rc = CHAM_128_256_ROUNDS;
@@ -241,5 +241,5 @@ void cham256_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
         rk = (rk == (const uint32_t*) rks) ? rk + 8 : rk - 8;
     }
 
-    memcpy(out, blk, BLOCKSIZE_128);
+    memcpy(dst, blk, BLOCKSIZE_128);
 }
