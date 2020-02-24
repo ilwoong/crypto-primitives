@@ -105,19 +105,19 @@ static void final_transformation(uint8_t* dst, const uint8_t* src, const uint8_t
     dst[7] = src[0];
 }
 
-static void enc_round(uint8_t* out, const uint8_t* rk)
+static void enc_round(uint8_t* block, const uint8_t* rk)
 {
-    uint8_t tmp6 = out[6];
-    uint8_t tmp7 = out[7];
+    uint8_t tmp6 = block[6];
+    uint8_t tmp7 = block[7];
 
-    out[7] = out[6];
-    out[6] = out[5] + (F1(out[4]) ^ rk[2]);
-    out[5] = out[4];
-    out[4] = out[3] ^ (F0(out[2]) + rk[1]);
-    out[3] = out[2]; 
-    out[2] = out[1] + (F1(out[0]) ^ rk[0]);
-    out[1] = out[0]; 
-    out[0] = tmp7 ^ (F0(tmp6) + rk[3]);
+    block[7] = block[6];
+    block[6] = block[5] + (F1(block[4]) ^ rk[2]);
+    block[5] = block[4];
+    block[4] = block[3] ^ (F0(block[2]) + rk[1]);
+    block[3] = block[2]; 
+    block[2] = block[1] + (F1(block[0]) ^ rk[0]);
+    block[1] = block[0]; 
+    block[0] = tmp7 ^ (F0(tmp6) + rk[3]);
 }
 
 //=============================================================================
@@ -147,18 +147,18 @@ static void inverse_final_transformation(uint8_t* dst, const uint8_t* src, const
     dst[0] = src[7];
 }
 
-static void dec_round(uint8_t* out, const uint8_t* rk)
+static void dec_round(uint8_t* block, const uint8_t* rk)
 {
-    uint8_t tmp0 = out[0];
+    uint8_t tmp0 = block[0];
 
-    out[0] = out[1];
-	out[1] = out[2] - (F1(out[0]) ^ rk[0]);
-	out[2] = out[3];
-	out[3] = out[4] ^ (F0(out[2]) + rk[1]);
-	out[4] = out[5];
-	out[5] = out[6] - (F1(out[4]) ^ rk[2]);
-	out[6] = out[7];	
-	out[7] = tmp0 ^ (F0(out[6]) + rk[3]);
+    block[0] = block[1];
+	block[1] = block[2] - (F1(block[0]) ^ rk[0]);
+	block[2] = block[3];
+	block[3] = block[4] ^ (F0(block[2]) + rk[1]);
+	block[4] = block[5];
+	block[5] = block[6] - (F1(block[4]) ^ rk[2]);
+	block[6] = block[7];	
+	block[7] = tmp0 ^ (F0(block[6]) + rk[3]);
 }
 
 //=============================================================================

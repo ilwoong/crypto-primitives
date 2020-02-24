@@ -95,84 +95,84 @@ static void generate_whitening_keys(uint8_t* wk, const uint8_t* mk)
 //=============================================================================
 // functions for encryption
 //=============================================================================
-static void initial_transformation(uint8_t* out, const uint8_t* in, const uint8_t* rk)
+static void initial_transformation(uint8_t* dst, const uint8_t* src, const uint8_t* rk)
 {
-    out[0] = in[0] + rk[0];
-    out[1] = in[1];
-    out[2] = in[2] ^ rk[1];
-    out[3] = in[3];
-    out[4] = in[4] + rk[2];
-    out[5] = in[5];
-    out[6] = in[6] ^ rk[3];
-    out[7] = in[7];
+    dst[0] = src[0] + rk[0];
+    dst[1] = src[1];
+    dst[2] = src[2] ^ rk[1];
+    dst[3] = src[3];
+    dst[4] = src[4] + rk[2];
+    dst[5] = src[5];
+    dst[6] = src[6] ^ rk[3];
+    dst[7] = src[7];
 }
 
-static void final_transformation(uint8_t* out, const uint8_t* in, const uint8_t* rk)
+static void final_transformation(uint8_t* dst, const uint8_t* src, const uint8_t* rk)
 {
-    out[0] = in[1] + rk[4];
-    out[1] = in[2];
-    out[2] = in[3] ^ rk[5];
-    out[3] = in[4];
-    out[4] = in[5] + rk[6];
-    out[5] = in[6];
-    out[6] = in[7] ^ rk[7];
-    out[7] = in[0];
+    dst[0] = src[1] + rk[4];
+    dst[1] = src[2];
+    dst[2] = src[3] ^ rk[5];
+    dst[3] = src[4];
+    dst[4] = src[5] + rk[6];
+    dst[5] = src[6];
+    dst[6] = src[7] ^ rk[7];
+    dst[7] = src[0];
 }
 
-static void enc_round(uint8_t* out, const uint8_t* rk)
+static void enc_round(uint8_t* block, const uint8_t* rk)
 {
-    uint8_t tmp6 = out[6];
-    uint8_t tmp7 = out[7];
+    uint8_t tmp6 = block[6];
+    uint8_t tmp7 = block[7];
 
-    out[7] = out[6];
-    out[6] = out[5] + (F1[out[4]] ^ rk[2]);
-    out[5] = out[4];
-    out[4] = out[3] ^ (F0[out[2]] + rk[1]);
-    out[3] = out[2]; 
-    out[2] = out[1] + (F1[out[0]] ^ rk[0]);
-    out[1] = out[0]; 
-    out[0] = tmp7 ^ (F0[tmp6] + rk[3]);
+    block[7] = block[6];
+    block[6] = block[5] + (F1[block[4]] ^ rk[2]);
+    block[5] = block[4];
+    block[4] = block[3] ^ (F0[block[2]] + rk[1]);
+    block[3] = block[2]; 
+    block[2] = block[1] + (F1[block[0]] ^ rk[0]);
+    block[1] = block[0]; 
+    block[0] = tmp7 ^ (F0[tmp6] + rk[3]);
 }
 
 //=============================================================================
 // functions for decryption
 //=============================================================================
-static void inverse_initial_transformation(uint8_t* out, const uint8_t* in, const uint8_t* rk)
+static void inverse_initial_transformation(uint8_t* dst, const uint8_t* src, const uint8_t* rk)
 {
-    out[0] = in[0] - rk[0];
-    out[1] = in[1];
-    out[2] = in[2] ^ rk[1];
-    out[3] = in[3];
-    out[4] = in[4] - rk[2];
-    out[5] = in[5];
-    out[6] = in[6] ^ rk[3];
-    out[7] = in[7];
+    dst[0] = src[0] - rk[0];
+    dst[1] = src[1];
+    dst[2] = src[2] ^ rk[1];
+    dst[3] = src[3];
+    dst[4] = src[4] - rk[2];
+    dst[5] = src[5];
+    dst[6] = src[6] ^ rk[3];
+    dst[7] = src[7];
 }
 
-static void inverse_final_transformation(uint8_t* out, const uint8_t* in, const uint8_t* rk)
+static void inverse_final_transformation(uint8_t* dst, const uint8_t* src, const uint8_t* rk)
 {
-    out[7] = in[6] ^ rk[7];
-    out[6] = in[5];
-    out[5] = in[4] - rk[6];
-    out[4] = in[3];
-    out[3] = in[2] ^ rk[5];
-    out[2] = in[1];
-    out[1] = in[0] - rk[4];
-    out[0] = in[7];
+    dst[7] = src[6] ^ rk[7];
+    dst[6] = src[5];
+    dst[5] = src[4] - rk[6];
+    dst[4] = src[3];
+    dst[3] = src[2] ^ rk[5];
+    dst[2] = src[1];
+    dst[1] = src[0] - rk[4];
+    dst[0] = src[7];
 }
 
-static void dec_round(uint8_t* out, const uint8_t* rk)
+static void dec_round(uint8_t* block, const uint8_t* rk)
 {
-    uint8_t tmp0 = out[0];
+    uint8_t tmp0 = block[0];
 
-    out[0] = out[1];
-	out[1] = out[2] - (F1[out[0]] ^ rk[0]);
-	out[2] = out[3];
-	out[3] = out[4] ^ (F0[out[2]] + rk[1]);
-	out[4] = out[5];
-	out[5] = out[6] - (F1[out[4]] ^ rk[2]);
-	out[6] = out[7];	
-	out[7] = tmp0 ^ (F0[out[6]] + rk[3]);
+    block[0] = block[1];
+	block[1] = block[2] - (F1[block[0]] ^ rk[0]);
+	block[2] = block[3];
+	block[3] = block[4] ^ (F0[block[2]] + rk[1]);
+	block[4] = block[5];
+	block[5] = block[6] - (F1[block[4]] ^ rk[2]);
+	block[6] = block[7];	
+	block[7] = tmp0 ^ (F0[block[6]] + rk[3]);
 }
 
 //=============================================================================
@@ -197,39 +197,39 @@ void hight_keygen(uint8_t* rks, const uint8_t* mk)
 //=============================================================================
 // encryption
 //=============================================================================
-void hight_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void hight_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
     uint8_t round;
     const uint8_t* wk = rks;
     const uint8_t* rk = rks + 8;
     uint8_t block[8] = {0,};
 
-    initial_transformation(block, in, wk);
+    initial_transformation(block, src, wk);
     
     for (round = 0; round < HIGHT_ROUNDS; ++round) {
         enc_round(block, rk);
         rk += 4;
     }
 
-    final_transformation(out, block, wk);
+    final_transformation(dst, block, wk);
 }
 
 //=============================================================================
 // decryption
 //=============================================================================
-void hight_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void hight_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
     uint8_t round;
     const uint8_t* wk = rks;
     const uint8_t* rk = rks + 132;
     uint8_t block[8] = {0,};
 
-    inverse_final_transformation(block, in, wk);
+    inverse_final_transformation(block, src, wk);
 
     for (round = 0; round < HIGHT_ROUNDS; ++round) {
         dec_round(block, rk);
         rk -= 4;
     }
 
-    inverse_initial_transformation(out, block, wk);
+    inverse_initial_transformation(dst, block, wk);
 }
