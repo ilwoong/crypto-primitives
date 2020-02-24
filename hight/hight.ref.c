@@ -30,8 +30,8 @@
 static uint8_t F0(uint8_t x)
 {
     uint8_t t1 = (x << 1) ^ (x >> 7);
-	uint8_t t2 = (x << 2) ^ (x >> 6);
-	uint8_t t3 = (x << 7) ^ (x >> 1);
+    uint8_t t2 = (x << 2) ^ (x >> 6);
+    uint8_t t3 = (x << 7) ^ (x >> 1);
 
     return t1 ^ t2 ^ t3;
 }
@@ -39,8 +39,8 @@ static uint8_t F0(uint8_t x)
 static uint8_t F1(uint8_t x)
 {
     uint8_t t1 = (x << 3) ^ (x >> 5);
-	uint8_t t2 = (x << 4) ^ (x >> 4);
-	uint8_t t3 = (x << 6) ^ (x >> 2);
+    uint8_t t2 = (x << 4) ^ (x >> 4);
+    uint8_t t3 = (x << 6) ^ (x >> 2);
 
     return t1 ^ t2 ^ t3;
 }
@@ -152,13 +152,13 @@ static void dec_round(uint8_t* block, const uint8_t* rk)
     uint8_t tmp0 = block[0];
 
     block[0] = block[1];
-	block[1] = block[2] - (F1(block[0]) ^ rk[0]);
-	block[2] = block[3];
-	block[3] = block[4] ^ (F0(block[2]) + rk[1]);
-	block[4] = block[5];
-	block[5] = block[6] - (F1(block[4]) ^ rk[2]);
-	block[6] = block[7];	
-	block[7] = tmp0 ^ (F0(block[6]) + rk[3]);
+    block[1] = block[2] - (F1(block[0]) ^ rk[0]);
+    block[2] = block[3];
+    block[3] = block[4] ^ (F0(block[2]) + rk[1]);
+    block[4] = block[5];
+    block[5] = block[6] - (F1(block[4]) ^ rk[2]);
+    block[6] = block[7];
+    block[7] = tmp0 ^ (F0(block[6]) + rk[3]);
 }
 
 //=============================================================================
