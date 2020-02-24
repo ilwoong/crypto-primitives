@@ -1,7 +1,7 @@
 /**
  * The MIT License
  *
- * Copyright (c) 2020 Ilwoong Jeong (https://github.com/ilwoong)
+ * Copyright (c) 2019-2020 Ilwoong Jeong (https://github.com/ilwoong)
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -48,26 +48,11 @@ static uint32_t sub_word(uint32_t value)
     return value;
 }
 
-static void add_round_keys(uint8_t* block, const uint8_t* rks) {
-   block[0] ^= rks[0];
-   block[1] ^= rks[4];
-   block[2] ^= rks[8];
-   block[3] ^= rks[12];
-
-   block[4] ^= rks[1];
-   block[5] ^= rks[5];
-   block[6] ^= rks[9];
-   block[7] ^= rks[13];
-
-   block[8] ^= rks[2];
-   block[9] ^= rks[6];
-   block[10] ^= rks[10];
-   block[11] ^= rks[14];
-
-   block[12] ^= rks[3];
-   block[13] ^= rks[7];
-   block[14] ^= rks[11];
-   block[15] ^= rks[15];
+static void add_round_keys(uint8_t* block, const uint8_t* rks) 
+{
+    for (int i = 0; i < 16; ++i) {
+        block[i] ^= rks[i];
+    }
 }
 
 static void swap(uint8_t* block, size_t pos1, size_t pos2)
@@ -77,16 +62,6 @@ static void swap(uint8_t* block, size_t pos1, size_t pos2)
     block[pos2] = tmp;
 }
 
-static void transpose(uint8_t* block)
-{
-    swap(block, 1, 4);
-    swap(block, 2, 8);
-    swap(block, 3, 12);
-    swap(block, 6, 9);
-    swap(block, 7, 13);
-    swap(block, 11, 14);
-}
-
 static void sub_bytes(uint8_t* block)
 {
     for (int i = 0; i < 16; ++i) {
@@ -94,72 +69,33 @@ static void sub_bytes(uint8_t* block)
     }
 }
 
-static void inv_sub_bytes(uint8_t* block) 
-{
-    for (int i = 0; i < 16; ++i) {
-        block[i] = affine_sinv(block[i]);
-    }
-}
-
 static void shift_rows(uint8_t* block)
 {
-    uint8_t tmp = block[4];
-    block[4] = block[5];
-    block[5] = block[6];
-    block[6] = block[7];
-    block[7] = tmp;
+    uint8_t tmp = block[1];
+    block[1] = block[5];
+    block[5] = block[9];
+    block[9] = block[13];
+    block[13] = tmp;
 
-    swap(block, 8, 10);
-    swap(block, 9, 11);
+    swap(block, 2, 10);
+    swap(block, 6, 14);
 
     tmp = block[15];
-    block[15] = block[14];
-    block[14] = block[13];
-    block[13] = block[12];
-    block[12] = tmp;
-}
-
-static void inv_shift_rows(uint8_t* block)
-{
-    uint8_t tmp = block[7];
-    block[7] = block[6];
-    block[6] = block[5];
-    block[5] = block[4];
-    block[4] = tmp;
-
-    swap(block, 8, 10);
-    swap(block, 9, 11);
-
-    tmp = block[12];
-    block[12] = block[13];
-    block[13] = block[14];
-    block[14] = block[15];
-    block[15] = tmp;
+    block[15] = block[11];
+    block[11] = block[7];
+    block[7] = block[3];
+    block[3] = tmp;
 }
 
 static void mix_columns(uint8_t* in)
 {
     uint8_t block[16] = {0};
 
-    for (int i = 0; i < 4; ++i) {
-        block[i     ] = gf256_mul(in[i], 2) ^ gf256_mul(in[i + 4], 3) ^ gf256_mul(in[i + 8], 1) ^ gf256_mul(in[i + 12], 1);
-        block[i +  4] = gf256_mul(in[i], 1) ^ gf256_mul(in[i + 4], 2) ^ gf256_mul(in[i + 8], 3) ^ gf256_mul(in[i + 12], 1);
-        block[i +  8] = gf256_mul(in[i], 1) ^ gf256_mul(in[i + 4], 1) ^ gf256_mul(in[i + 8], 2) ^ gf256_mul(in[i + 12], 3);
-        block[i + 12] = gf256_mul(in[i], 3) ^ gf256_mul(in[i + 4], 1) ^ gf256_mul(in[i + 8], 1) ^ gf256_mul(in[i + 12], 2);
-    }
-
-    memcpy(in, block, 16);
-}
-
-static void inv_mix_columns(uint8_t* in)
-{
-    uint8_t block[16] = {0};
-
-    for (int i = 0; i < 4; ++i) {
-        block[i     ] = gf256_mul(in[i], 0xe) ^ gf256_mul(in[i + 4], 0xb) ^ gf256_mul(in[i + 8], 0xd) ^ gf256_mul(in[i + 12], 0x9);
-        block[i +  4] = gf256_mul(in[i], 0x9) ^ gf256_mul(in[i + 4], 0xe) ^ gf256_mul(in[i + 8], 0xb) ^ gf256_mul(in[i + 12], 0xd);
-        block[i +  8] = gf256_mul(in[i], 0xd) ^ gf256_mul(in[i + 4], 0x9) ^ gf256_mul(in[i + 8], 0xe) ^ gf256_mul(in[i + 12], 0xb);
-        block[i + 12] = gf256_mul(in[i], 0xb) ^ gf256_mul(in[i + 4], 0xd) ^ gf256_mul(in[i + 8], 0x9) ^ gf256_mul(in[i + 12], 0xe);
+    for (int i = 0; i < 16; i += 4) {
+        block[i    ] = gf256_mul(in[i], 2) ^ gf256_mul(in[i + 1], 3) ^ gf256_mul(in[i + 2], 1) ^ gf256_mul(in[i + 3], 1);
+        block[i + 1] = gf256_mul(in[i], 1) ^ gf256_mul(in[i + 1], 2) ^ gf256_mul(in[i + 2], 3) ^ gf256_mul(in[i + 3], 1);
+        block[i + 2] = gf256_mul(in[i], 1) ^ gf256_mul(in[i + 1], 1) ^ gf256_mul(in[i + 2], 2) ^ gf256_mul(in[i + 3], 3);
+        block[i + 3] = gf256_mul(in[i], 3) ^ gf256_mul(in[i + 1], 1) ^ gf256_mul(in[i + 2], 1) ^ gf256_mul(in[i + 3], 2);
     }
 
     memcpy(in, block, 16);
@@ -184,20 +120,56 @@ static void aes_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks, si
 {
     uint8_t block[16] = {0};
     memcpy(block, src, 16);
-    transpose(block);
 
     add_round_keys(block, rks);
     rks += 16;
 
-    for (int i = 0; i < rounds - 1; ++i, rks += 16)
-    {
+    for (int i = 0; i < rounds - 1; ++i, rks += 16) {
         encrypt_round(block, rks);
     }
 
     encrypt_last_round(block, rks);
 
-    transpose(block);
     memcpy(dst, block, 16);
+}
+
+static void inv_sub_bytes(uint8_t* block) 
+{
+    for (int i = 0; i < 16; ++i) {
+        block[i] = affine_sinv(block[i]);
+    }
+}
+
+static void inv_shift_rows(uint8_t* block)
+{
+    uint8_t tmp = block[13];
+    block[13] = block[9];
+    block[9] = block[5];
+    block[5] = block[1];
+    block[1] = tmp;
+
+    swap(block, 2, 10);
+    swap(block, 6, 14);
+
+    tmp = block[3];
+    block[3] = block[7];
+    block[7] = block[11];
+    block[11] = block[15];
+    block[15] = tmp;
+}
+
+static void inv_mix_columns(uint8_t* in)
+{
+    uint8_t block[16] = {0};
+
+    for (int i = 0; i < 16; i += 4) {
+        block[i    ] = gf256_mul(in[i], 0xe) ^ gf256_mul(in[i + 1], 0xb) ^ gf256_mul(in[i + 2], 0xd) ^ gf256_mul(in[i + 3], 0x9);
+        block[i + 1] = gf256_mul(in[i], 0x9) ^ gf256_mul(in[i + 1], 0xe) ^ gf256_mul(in[i + 2], 0xb) ^ gf256_mul(in[i + 3], 0xd);
+        block[i + 2] = gf256_mul(in[i], 0xd) ^ gf256_mul(in[i + 1], 0x9) ^ gf256_mul(in[i + 2], 0xe) ^ gf256_mul(in[i + 3], 0xb);
+        block[i + 3] = gf256_mul(in[i], 0xb) ^ gf256_mul(in[i + 1], 0xd) ^ gf256_mul(in[i + 2], 0x9) ^ gf256_mul(in[i + 3], 0xe);
+    }
+
+    memcpy(in, block, 16);
 }
 
 static inline void decrypt_round(uint8_t* block, const uint8_t* rk)
@@ -219,21 +191,18 @@ static void aes_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks, si
 {
     uint8_t block[16] = {0};
     memcpy(block, src, 16);
-    transpose(block);
 
     rks += 16 * rounds;
 
     add_round_keys(block, rks);
     rks -= 16;
 
-    for (int i = 0; i < rounds - 1; ++i, rks -= 16)
-    {
+    for (int i = 0; i < rounds - 1; ++i, rks -= 16) {
         decrypt_round(block, rks);
     }
 
     decrypt_last_round(block, rks);
 
-    transpose(block);
     memcpy(dst, block, 16);
 }
 
