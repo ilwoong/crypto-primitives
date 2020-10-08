@@ -1,28 +1,25 @@
 /**
- * MIT License
+ * The MIT License
+ *
+ * Copyright (c) 2019-2020 Ilwoong Jeong (https://github.com/ilwoong)
  * 
- * Copyright (c) 2018 Ilwoong Jeong, https://github.com/ilwoong
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  * 
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  * 
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 #include "aes.h"
@@ -51,10 +48,10 @@ static __m128i aes_keyexp2(__m128i k0, __m128i k1){
     return _mm_xor_si128(k0, k1);
 }
 
-static inline void aesni_encrypt(uint8_t *cipherText, const uint8_t *plainText, const __m128i *rks, size_t numRounds)
+static inline void aesni_encrypt(uint8_t *dst, const uint8_t *src, const __m128i *rks, size_t numRounds)
 {
     int round = 0;
-    __m128i blk = _mm_loadu_si128((__m128i *) plainText);
+    __m128i blk = _mm_loadu_si128((__m128i *) src);
 
     blk = _mm_xor_si128(blk, rks[round]);
 
@@ -64,13 +61,13 @@ static inline void aesni_encrypt(uint8_t *cipherText, const uint8_t *plainText, 
         
     blk = _mm_aesenclast_si128(blk, rks[round]);
 
-    _mm_storeu_si128((__m128i *) cipherText, blk);
+    _mm_storeu_si128((__m128i *) dst, blk);
 }
 
-static inline void aesni_decrypt(uint8_t *plainText, const uint8_t *cipherText, const __m128i *rks, size_t numRounds)
+static inline void aesni_decrypt(uint8_t *dst, const uint8_t *src, const __m128i *rks, size_t numRounds)
 {
     int round = numRounds;
-    __m128i blk = _mm_loadu_si128((__m128i *) cipherText);
+    __m128i blk = _mm_loadu_si128((__m128i *) src);
 
     blk = _mm_xor_si128(blk, rks[round]);
     
@@ -80,7 +77,7 @@ static inline void aesni_decrypt(uint8_t *plainText, const uint8_t *cipherText, 
 
     blk = _mm_aesdeclast_si128(blk, rks[round]);
 
-    _mm_storeu_si128((__m128i *) plainText, blk);
+    _mm_storeu_si128((__m128i *) dst, blk);
 }
 
 /******************************************************************************
@@ -103,14 +100,14 @@ void aes128_keygen(uint8_t* rk, const uint8_t* mk)
     rks[10]  = aes_keyexp1(rks[9], _mm_aeskeygenassist_si128(rks[9], 0x36));
 }
 
-void aes128_encrypt(uint8_t *cipherText, const uint8_t *plainText, const uint8_t *rks)
+void aes128_encrypt(uint8_t *dst, const uint8_t *src, const uint8_t *rks)
 {
-    aesni_encrypt(cipherText, plainText, (__m128i*) rks, AES128_ROUNDS);
+    aesni_encrypt(dst, src, (__m128i*) rks, AES128_ROUNDS);
 }
 
-void aes128_decrypt(uint8_t *plainText, const uint8_t *cipherText, const uint8_t *rks)
+void aes128_decrypt(uint8_t *dst, const uint8_t *src, const uint8_t *rks)
 {
-    aesni_decrypt(plainText, cipherText, (__m128i*) rks, AES128_ROUNDS);
+    aesni_decrypt(dst, src, (__m128i*) rks, AES128_ROUNDS);
 }
 
 /******************************************************************************
@@ -176,14 +173,14 @@ void aes192_keygen(uint8_t* rk, const uint8_t* mk)
 
 }
 
-void aes192_encrypt(uint8_t* ct, const uint8_t* pt, const uint8_t* rks)
+void aes192_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aesni_encrypt(ct, pt, (__m128i*) rks, AES192_ROUNDS);
+    aesni_encrypt(dst, src, (__m128i*) rks, AES192_ROUNDS);
 }
 
-void aes192_decrypt(uint8_t* pt, const uint8_t* ct, const uint8_t* rks)
+void aes192_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aesni_decrypt(pt, ct, (__m128i*) rks, AES192_ROUNDS);
+    aesni_decrypt(dst, src, (__m128i*) rks, AES192_ROUNDS);
 }
 
 /******************************************************************************
@@ -217,12 +214,12 @@ void aes256_keygen(uint8_t* rk, const uint8_t* mk)
     rks[14] = aes_keyexp1(rks[12], _mm_aeskeygenassist_si128(rks[13], 0x40));
 }
 
-void aes256_encrypt(uint8_t* ct, const uint8_t* pt, const uint8_t* rks)
+void aes256_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aesni_encrypt(ct, pt, (__m128i*) rks, AES256_ROUNDS);
+    aesni_encrypt(dst, src, (__m128i*) rks, AES256_ROUNDS);
 }
 
-void aes256_decrypt(uint8_t* pt, const uint8_t* ct, const uint8_t* rks)
+void aes256_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aesni_decrypt(pt, ct, (__m128i*) rks, AES256_ROUNDS);
+    aesni_decrypt(dst, src, (__m128i*) rks, AES256_ROUNDS);
 }

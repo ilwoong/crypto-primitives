@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = 
+CFLAGS = -O2
 LDFLAGS = -lgomp
 TARGETS = aes aeslut1 aeslut2 aeslut3 aesni print_tables
 

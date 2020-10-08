@@ -1,7 +1,7 @@
 /**
  * The MIT License
  *
- * Copyright (c) 2019-2020 Ilwoong Jeong (https://github.com/ilwoong)
+ * Copyright (c) 2020 Ilwoong Jeong (https://github.com/ilwoong)
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +22,14 @@
  * THE SOFTWARE.
  */
 
-#ifndef __CRYPTO_PRIMITIVES_AES_GF256_H__
-#define __CRYPTO_PRIMITIVES_AES_GF256_H__
+#ifndef __CRYPTO_PRIMITIVES_SEED_H__
+#define __CRYPTO_PRIMITIVES_SEED_H__
 
 #include <stdint.h>
+#include <stddef.h>
 
-uint8_t gf256_mul(uint8_t lhs, uint8_t rhs);
-uint8_t gf256_inv(uint8_t value);
+void seed_keygen(uint8_t* rks, const uint8_t* mk);
+void seed_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks);
+void seed_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks);
 
 #endif
