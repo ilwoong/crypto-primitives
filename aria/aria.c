@@ -1,33 +1,32 @@
 /**
- * MIT License
+ * The MIT License
+ *
+ * Copyright (c) 2020 Ilwoong Jeong (https://github.com/ilwoong)
  * 
- * Copyright (c) 2019 Ilwoong Jeong, https://github.com/ilwoong
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  * 
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  * 
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 #include "aria.h"
 #include "aria_sbox.h"
+#include <string.h>
 
+const static size_t BLOCKSIZE = 16;
 const static size_t ARIA128_ROUNDS = 12;
 const static size_t ARIA192_ROUNDS = 14;
 const static size_t ARIA256_ROUNDS = 16;
@@ -38,20 +37,7 @@ static const uint8_t CK[3][16] = {
     {0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97, 0x75, 0x04, 0xe8, 0xc9, 0x0e},
 };
 
-static inline void copy(uint8_t* out, const uint8_t* in, size_t count)
-{
-    for (int i = 0; i < count; ++i) 
-    {
-        out[i] = in[i];
-    }
-}
-
-static inline void copy_block(uint8_t* out, const uint8_t* in)
-{
-    copy(out, in, 16);
-}
-
-static inline void xor(uint8_t* out, const uint8_t* in, size_t count)
+static inline void bitwise_xor(uint8_t* out, const uint8_t* in, size_t count)
 {
     for (size_t i = 0; i < count; ++i) {
         out[i] ^= in[i];
@@ -63,20 +49,6 @@ static inline void add_round_key(uint8_t* block, const uint8_t* rk)
     for (int i = 0; i < 16; ++i)
     {
         block[i] ^= rk[i];
-    }
-}
-
-static inline void substitute_odd(uint8_t* block)
-{
-    for (int i = 0; i < 16; ++i) {
-        block[i] = ARIA_SBOX[i & 3][block[i]];
-    }
-}
-
-static inline void substitute_even(uint8_t* block)
-{
-    for (int i = 0; i < 16; ++i) {
-        block[i] = ARIA_SBOX[(i + 2) & 3][block[i]];
     }
 }
 
@@ -109,20 +81,20 @@ static void diffuse(uint8_t* in)
     tmp[ 8] = in[ 1] ^ in[ 4] ^ in[15] ^ t[3];
     tmp[13] = in[ 3] ^ in[ 6] ^ in[ 8] ^ t[3];
 
-    copy_block(in, tmp);
+    memcpy(in, tmp, BLOCKSIZE);
 }
 
 static inline void round_odd(uint8_t* block, const uint8_t* rk)
 {
     add_round_key(block, rk);
-    substitute_odd(block);
+    aria_substitute_odd(block);
     diffuse(block);
 }
 
 static inline void round_even(uint8_t* block, const uint8_t* rk) 
 {
     add_round_key(block, rk);
-    substitute_even(block);
+    aria_substitute_even(block);
     diffuse(block);
 }
 
@@ -131,7 +103,7 @@ static inline void round_final(uint8_t* block, const uint8_t* rk)
     add_round_key(block, rk);
     rk += 16;
 
-    substitute_even(block);
+    aria_substitute_even(block);
     add_round_key(block, rk);
 }
 
@@ -162,24 +134,24 @@ static void init_key_material(uint8_t* w, const uint8_t* idx, const uint8_t* mk,
     uint8_t* w2 = w1 + 16;
     uint8_t* w3 = w2 + 16;
 
-    copy_block(kl, mk);
+    memcpy(kl, mk, BLOCKSIZE);
     if (keysize > 16) {
-        copy(kr, mk + 16, keysize - 16);
+        memcpy(kr, mk + 16, keysize - 16);
     }
 
-    copy_block(w0, kl);
+    memcpy(w0, kl, BLOCKSIZE);
 
-    copy_block(w1, w0);
+    memcpy(w1, w0, BLOCKSIZE);
     round_odd(w1, CK[idx[0]]);
-    xor(w1, kr, 16);
+    bitwise_xor(w1, kr, BLOCKSIZE);
 
-    copy_block(w2, w1);
+    memcpy(w2, w1, BLOCKSIZE);
     round_even(w2, CK[idx[1]]);
-    xor(w2, w0, 16);
+    bitwise_xor(w2, w0, BLOCKSIZE);
 
-    copy_block(w3, w2);
+    memcpy(w3, w2, BLOCKSIZE);
     round_odd(w3, CK[idx[2]]);
-    xor(w3, w1, 16);
+    bitwise_xor(w3, w1, BLOCKSIZE);
 }
 
 static void gen_4round_keys(uint8_t* out, uint8_t* w, size_t rot)
@@ -206,27 +178,27 @@ static void aria_expand_key_dec(uint8_t* dec_rks, const uint8_t* enc_rks, size_t
 {
     enc_rks += rounds * 16;
 
-    copy_block(dec_rks, enc_rks);
+    memcpy(dec_rks, enc_rks, BLOCKSIZE);
     dec_rks += 16;
     enc_rks -= 16;
 
     for (int i = 1; i < rounds; ++i) {
-        copy_block(dec_rks, enc_rks);
+        memcpy(dec_rks, enc_rks, BLOCKSIZE);
         diffuse(dec_rks);
         
         dec_rks += 16;
         enc_rks -= 16;
     }
 
-    copy_block(dec_rks, enc_rks);
+    memcpy(dec_rks, enc_rks, BLOCKSIZE);
 }
 
-static inline void aria_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks, size_t rounds)
+static inline void aria_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks, size_t rounds)
 {
     const uint8_t* rk = rks;
     uint8_t block[16] = {0, };
 
-    copy_block(block, in);
+    memcpy(block, src, BLOCKSIZE);
 
     for (int round = 0; round < rounds - 2; round += 2)
     {
@@ -242,12 +214,12 @@ static inline void aria_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* 
 
     round_final(block, rk);
 
-    copy_block(out, block);
+    memcpy(dst, block, BLOCKSIZE);
 }
 
-static inline void aria_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks, size_t rounds)
+static inline void aria_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks, size_t rounds)
 {
-    aria_encrypt(out, in, rks, rounds);
+    aria_encrypt(dst, src, rks, rounds);
 }
 
 /**
@@ -257,7 +229,7 @@ static inline void aria_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* 
  * @param[in] in plaintext
  * @param[in] rks round keys
  */ 
-void aria128_expand_key_enc(uint8_t* out, const uint8_t* mk)
+void aria128_expand_key_enc(uint8_t* rks, const uint8_t* mk)
 {
     uint8_t idx[3] = {0, 1, 2};
     
@@ -269,17 +241,17 @@ void aria128_expand_key_enc(uint8_t* out, const uint8_t* mk)
 
     init_key_material(w, idx, mk, 16);
 
-    gen_4round_keys(out, w, 19);
-    out += 4 * 16 ;
+    gen_4round_keys(rks, w, 19);
+    rks += 4 * 16 ;
 
-    gen_4round_keys(out, w, 31);
-    out += 4 * 16 ;
+    gen_4round_keys(rks, w, 31);
+    rks += 4 * 16 ;
 
-    gen_4round_keys(out, w, 128-61);
-    out += 4 * 16 ;
+    gen_4round_keys(rks, w, 128-61);
+    rks += 4 * 16 ;
     
     // 13th
-    xor_with_rotation(out, w0, w1, 128-31); 
+    xor_with_rotation(rks, w0, w1, 128-31); 
 }
 
 /**
@@ -289,11 +261,11 @@ void aria128_expand_key_enc(uint8_t* out, const uint8_t* mk)
  * @param[in] in plaintext
  * @param[in] rks round keys
  */ 
-void aria128_expand_key_dec(uint8_t* out, const uint8_t* mk)
+void aria128_expand_key_dec(uint8_t* rks, const uint8_t* mk)
 {
     uint8_t tmp[13 * 16] = {0};
     aria128_expand_key_enc(tmp, mk);
-    aria_expand_key_dec(out, tmp, ARIA128_ROUNDS);
+    aria_expand_key_dec(rks, tmp, ARIA128_ROUNDS);
 }
 
 /**
@@ -303,9 +275,9 @@ void aria128_expand_key_dec(uint8_t* out, const uint8_t* mk)
  * @param[in] in plaintext
  * @param[in] rks round keys
  */ 
-void aria128_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void aria128_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aria_encrypt(out, in, rks, ARIA128_ROUNDS);
+    aria_encrypt(dst, src, rks, ARIA128_ROUNDS);
 }
 
 /**
@@ -315,9 +287,9 @@ void aria128_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
  * @param[in] in ciphertext
  * @param[in] rks round keys
  */ 
-void aria128_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void aria128_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aria_decrypt(out, in, rks, ARIA128_ROUNDS);
+    aria_decrypt(dst, src, rks, ARIA128_ROUNDS);
 }
 
 /**
@@ -327,7 +299,7 @@ void aria128_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
  * @param[in] in plaintext
  * @param[in] rks round keys
  */ 
-void aria192_expand_key_enc(uint8_t* out, const uint8_t* mk)
+void aria192_expand_key_enc(uint8_t* rks, const uint8_t* mk)
 {
     uint8_t idx[3] = {1, 2, 0};
 
@@ -339,24 +311,24 @@ void aria192_expand_key_enc(uint8_t* out, const uint8_t* mk)
 
     init_key_material(w, idx, mk, 24);
 
-    gen_4round_keys(out, w, 19);
-    out += 4 * 16 ;
+    gen_4round_keys(rks, w, 19);
+    rks += 4 * 16 ;
 
-    gen_4round_keys(out, w, 31);
-    out += 4 * 16 ;
+    gen_4round_keys(rks, w, 31);
+    rks += 4 * 16 ;
 
-    gen_4round_keys(out, w, 128 - 61);
-    out += 4 * 16 ;
+    gen_4round_keys(rks, w, 128 - 61);
+    rks += 4 * 16 ;
     
     // 13th
-    xor_with_rotation(out, w0, w1, 128 - 31);
-    out += 16;
+    xor_with_rotation(rks, w0, w1, 128 - 31);
+    rks += 16;
 
-    xor_with_rotation(out, w1, w2, 128 - 31);
-    out += 16;
+    xor_with_rotation(rks, w1, w2, 128 - 31);
+    rks += 16;
 
-    xor_with_rotation(out, w2, w3, 128 - 31);
-    out += 16;
+    xor_with_rotation(rks, w2, w3, 128 - 31);
+    rks += 16;
 }
 
 /**
@@ -366,11 +338,11 @@ void aria192_expand_key_enc(uint8_t* out, const uint8_t* mk)
  * @param[in] in plaintext
  * @param[in] rks round keys
  */ 
-void aria192_expand_key_dec(uint8_t* out, const uint8_t* mk)
+void aria192_expand_key_dec(uint8_t* rks, const uint8_t* mk)
 {
     uint8_t tmp[15 * 16] = {0};
     aria192_expand_key_enc(tmp, mk);
-    aria_expand_key_dec(out, tmp, ARIA192_ROUNDS);
+    aria_expand_key_dec(rks, tmp, ARIA192_ROUNDS);
 }
 
 /**
@@ -380,9 +352,9 @@ void aria192_expand_key_dec(uint8_t* out, const uint8_t* mk)
  * @param[in] in plaintext
  * @param[in] rks round keys
  */ 
-void aria192_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void aria192_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aria_encrypt(out, in, rks, ARIA192_ROUNDS);
+    aria_encrypt(dst, src, rks, ARIA192_ROUNDS);
 }
 
 /**
@@ -392,9 +364,9 @@ void aria192_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
  * @param[in] in ciphertext
  * @param[in] rks round keys
  */ 
-void aria192_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void aria192_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aria_decrypt(out, in, rks, ARIA192_ROUNDS);
+    aria_decrypt(dst, src, rks, ARIA192_ROUNDS);
 }
 
 /**
@@ -404,7 +376,7 @@ void aria192_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
  * @param[in] in plaintext
  * @param[in] rks round keys
  */ 
-void aria256_expand_key_enc(uint8_t* out, const uint8_t* mk)
+void aria256_expand_key_enc(uint8_t* rks, const uint8_t* mk)
 {
     uint8_t idx[3] = {2, 0, 1};
 
@@ -416,20 +388,20 @@ void aria256_expand_key_enc(uint8_t* out, const uint8_t* mk)
 
     init_key_material(w, idx, mk, 32);
 
-    gen_4round_keys(out, w, 19);
-    out += 4 * 16 ;
+    gen_4round_keys(rks, w, 19);
+    rks += 4 * 16 ;
 
-    gen_4round_keys(out, w, 31);
-    out += 4 * 16 ;
+    gen_4round_keys(rks, w, 31);
+    rks += 4 * 16 ;
 
-    gen_4round_keys(out, w, 128 - 61);
-    out += 4 * 16 ;
+    gen_4round_keys(rks, w, 128 - 61);
+    rks += 4 * 16 ;
 
-    gen_4round_keys(out, w, 128 - 31);
-    out += 4 * 16 ;
+    gen_4round_keys(rks, w, 128 - 31);
+    rks += 4 * 16 ;
     
     // 17th
-    xor_with_rotation(out, w0, w1, 128-19); 
+    xor_with_rotation(rks, w0, w1, 128-19); 
 }
 
 /**
@@ -439,11 +411,11 @@ void aria256_expand_key_enc(uint8_t* out, const uint8_t* mk)
  * @param[in] in plaintext
  * @param[in] rks round keys
  */ 
-void aria256_expand_key_dec(uint8_t* out, const uint8_t* mk)
+void aria256_expand_key_dec(uint8_t* rks, const uint8_t* mk)
 {
     uint8_t tmp[17 * 16] = {0};
     aria256_expand_key_enc(tmp, mk);
-    aria_expand_key_dec(out, tmp, ARIA256_ROUNDS);
+    aria_expand_key_dec(rks, tmp, ARIA256_ROUNDS);
 }
 
 /**
@@ -453,9 +425,9 @@ void aria256_expand_key_dec(uint8_t* out, const uint8_t* mk)
  * @param[in] in plaintext
  * @param[in] rks round keys
  */ 
-void aria256_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void aria256_encrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aria_encrypt(out, in, rks, ARIA256_ROUNDS);
+    aria_encrypt(dst, src, rks, ARIA256_ROUNDS);
 }
 
 /**
@@ -465,7 +437,7 @@ void aria256_encrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
  * @param[in] in ciphertext
  * @param[in] rks round keys
  */ 
-void aria256_decrypt(uint8_t* out, const uint8_t* in, const uint8_t* rks)
+void aria256_decrypt(uint8_t* dst, const uint8_t* src, const uint8_t* rks)
 {
-    aria_decrypt(out, in, rks, ARIA256_ROUNDS);
+    aria_decrypt(dst, src, rks, ARIA256_ROUNDS);
 }

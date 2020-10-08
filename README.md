@@ -21,6 +21,7 @@ ARIA is a block cipher algorithm which supports 128, 192, and 256-bit key.
 
 #### Implementations
 * ARIA reference implementation
+* ARIA lookup table implementation
 
 ### CHAM
 CHAM is a family of block ciphers which consists of CHAM-64/128, CHAM-128/128, and CHAM-128/256.
